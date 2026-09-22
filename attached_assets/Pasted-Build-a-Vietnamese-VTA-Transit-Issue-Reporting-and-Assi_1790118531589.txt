@@ -1,0 +1,58 @@
+Build a Vietnamese VTA Transit Issue Reporting and Assistant Prototype
+Create a polished, accessible web application prototype for reporting problems with local public transportation in San José. The prototype is designed for Vietnamese-speaking VTA riders, especially the primary persona, Mai Nguyen, a 70-year-old Vietnamese resident who relies on VTA transportation for medical appointments.
+The application should have exactly two screens and one complete workflow:
+A rider submits a transit issue using text, an image, and/or Vietnamese voice input.
+The application transcribes the voice, creates a structured report, provides a basic Vietnamese transit response, and simulates sending the report to the transit department.
+Do not add unnecessary pages, accounts, dashboards, databases, or advanced features.
+Visual Design
+Use a simple, readable, accessible design with:
+Dark blue as the primary color
+Light green as the accent color
+Light blue as the secondary background color
+Large buttons and readable text
+High color contrast
+Clear labels and instructions
+Rounded cards and simple spacing
+No complicated animations
+No cluttered navigation
+Vietnamese must be the default language.
+Add a small Vietnamese/English language toggle in the top-right corner. The toggle is only for developer testing.
+Screen 1: Submit a Transit Issue
+Title in Vietnamese:
+“Báo cáo vấn đề giao thông VTA”
+English version:
+“Report a VTA Transit Issue”
+Display a short Vietnamese instruction:
+“Hãy mô tả vấn đề bạn gặp phải khi sử dụng phương tiện giao thông công cộng.”
+English version:
+“Describe the problem you experienced while using public transportation.”
+Include the following fields:
+1. Text Description
+Provide a large text area where the rider can type a transit problem.
+Vietnamese placeholder:
+“Ví dụ: Xe buýt của tôi bị trễ…”
+English placeholder:
+“For example: My bus was late…”
+2. Image Upload
+Allow the user to upload one image using a file input.
+Examples of images could include:
+A damaged bus stop
+A missing sign
+A blocked access ramp
+A broken shelter
+A schedule or service notice
+Show a preview of the selected image. Include a remove-image option.
+Do not upload the image to an external service. Keep it locally in the browser for this prototype.
+3. Vietnamese Voice Input
+Include one microphone button labeled:
+“Speak”
+Use the browser Web Speech API with speech recognition configured for Vietnamese:
+vi-VN
+The microphone must work in both Vietnamese and English testing modes, but speech recognition must remain configured for Vietnamese in both modes.
+When the user speaks:
+Display the live transcript
+Add the transcript to the text description
+Show a clear listening state
+Stop listening when recognition ends
+Display a helpful message if browser speech rec
+
