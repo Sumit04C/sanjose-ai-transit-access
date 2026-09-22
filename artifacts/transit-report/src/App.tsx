@@ -49,7 +49,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
   return <Link href="/" className="focus-ring flex items-center gap-3" data-testid="link-home">
     <span className="relative grid h-10 w-10 place-items-center rounded-[13px] bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] shadow-[4px_4px_0_hsl(206_43%_17%)]">
       <BusFront size={22} strokeWidth={2.5} />
-      <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-[hsl(var(--sidebar))] bg-[hsl(168_52%_38%)]" />
+      <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-[hsl(var(--sidebar))] bg-[hsl(var(--chart-2))]" />
     </span>
     {!compact && <span className="font-[var(--app-font-sans)] text-[1.08rem] font-bold tracking-[-.035em]">Transit<span className="text-[hsl(var(--accent))]">Report</span></span>}
   </Link>;
@@ -59,8 +59,8 @@ function StatusPill({ status }: { status: string }) {
   const meta: Record<string, { label: string; cls: string }> = {
     submitted: { label: 'New', cls: 'bg-[hsl(42_82%_57%/.17)] text-[hsl(30_68%_31%)]' },
     reviewing: { label: 'Reviewing', cls: 'bg-[hsl(206_45%_73%/.28)] text-[hsl(206_43%_24%)]' },
-    assigned: { label: 'Assigned', cls: 'bg-[hsl(16_81%_56%/.15)] text-[hsl(16_70%_39%)]' },
-    resolved: { label: 'Resolved', cls: 'bg-[hsl(168_52%_38%/.16)] text-[hsl(171_41%_22%)]' },
+    assigned: { label: 'Assigned', cls: 'bg-[hsl(var(--accent)/.16)] text-[hsl(201_62%_35%)]' },
+    resolved: { label: 'Resolved', cls: 'bg-[hsl(var(--chart-2)/.16)] text-[hsl(153_41%_22%)]' },
   };
   const item = meta[status] ?? meta.submitted;
   return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[.08em] ${item.cls}`} data-testid={`status-${status}`}>
@@ -162,7 +162,7 @@ function RiderHome() {
   };
   if (sent) return <Shell><div className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-[1240px] px-5 py-14 lg:px-8 lg:py-20"><div className="mx-auto max-w-2xl animate-rise">
     <div className="relative overflow-hidden rounded-[28px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-7 shadow-[0_20px_60px_hsl(206_43%_17%/.09)] sm:p-12">
-      <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[80px] bg-[hsl(168_31%_91%)]" />
+      <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[80px] bg-[hsl(var(--secondary))]" />
       <div className="relative"><div className="mb-7 grid h-16 w-16 place-items-center rounded-2xl bg-[hsl(var(--chart-2))] text-[hsl(var(--card))] shadow-[5px_5px_0_hsl(206_43%_17%)]"><Check size={32} strokeWidth={3} /></div>
         <p className="mb-3 font-mono text-xs font-bold uppercase tracking-[.18em] text-[hsl(var(--chart-2))]">In the right hands</p>
         <h1 className="max-w-lg font-[var(--app-font-sans)] text-4xl font-bold tracking-[-.055em] text-[hsl(var(--foreground))] sm:text-5xl">Thanks for speaking up.</h1>
