@@ -349,6 +349,15 @@ function ReportForm({
   const [isSending, setIsSending] = useState(false);
   const voiceRef = useRef<VoiceRecognition | null>(null);
 
+  useEffect(() => {
+    if (voiceRef.current) {
+      voiceRef.current.stop();
+      setIsListening(false);
+      setVoiceTranscript('');
+      setVoiceMessage('');
+    }
+  }, [language]);
+
   const toggleVoice = () => {
     if (isListening) {
       voiceRef.current?.stop();
@@ -366,7 +375,7 @@ function ReportForm({
     const recognition = new Recognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'vi-VN';
+    recognition.lang = voiceLocales[language];
     recognition.onresult = (event) => {
       let finalText = '';
       let interimText = '';
@@ -544,7 +553,7 @@ function SubmittedReport({
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(t.response);
-    utterance.lang = language === 'vi' ? 'vi-VN' : 'en-US';
+    utterance.lang = voiceLocales[language];
     window.speechSynthesis.speak(utterance);
   };
 
@@ -624,9 +633,14 @@ export default function App() {
   const [submitted, setSubmitted] = useState<{ description: string; image: ImageAttachment | null } | null>(null);
   const t = copy[language];
 
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = t.title;
+  }, [language, t.title]);
+
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      <Header language={language} onLanguageChange={() => setLanguage((current) => (current === 'vi' ? 'en' : 'vi'))} />
+      <Header language={language} onLanguageChange={setLanguage} />
       <main className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8 flex items-center justify-between gap-4">
@@ -655,7 +669,7 @@ export default function App() {
         </div>
       </main>
       <footer className="border-t border-[hsl(var(--border))] px-5 py-6 text-center text-xs text-[hsl(var(--muted-foreground))]">
-        VTA Transit Support · San José
+        {t.footer}
       </footer>
     </div>
   );
