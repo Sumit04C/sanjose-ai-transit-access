@@ -53,7 +53,6 @@ type VoiceWindow = Window & {
 
 const copy = {
   vi: {
-    languageName: 'Tiếng Việt',
     languageOther: 'English',
     eyebrow: 'HỖ TRỢ HÀNH KHÁCH VTA',
     title: 'Báo cáo vấn đề giao thông VTA',
@@ -99,7 +98,6 @@ const copy = {
     readAloud: 'Đọc phản hồi',
   },
   en: {
-    languageName: 'English',
     languageOther: 'Tiếng Việt',
     eyebrow: 'VTA RIDER SUPPORT',
     title: 'Report a VTA Transit Issue',
@@ -168,7 +166,7 @@ function Header({ language, onLanguageChange }: { language: Language; onLanguage
           data-testid="button-language-toggle"
         >
           <Languages size={16} />
-          <span>{t.languageName}</span>
+          <span>{t.languageOther}</span>
         </button>
       </div>
     </header>
