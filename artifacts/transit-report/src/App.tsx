@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useRef, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
@@ -17,7 +17,21 @@ import {
   X,
 } from 'lucide-react';
 
-type Language = 'vi' | 'en';
+type Language = 'vi' | 'en' | 'es' | 'pa';
+
+const languageNames: Record<Language, string> = {
+  vi: 'Tiếng Việt',
+  en: 'English',
+  es: 'Español',
+  pa: 'ਪੰਜਾਬੀ',
+};
+
+const voiceLocales: Record<Language, string> = {
+  vi: 'vi-VN',
+  en: 'en-US',
+  es: 'es-US',
+  pa: 'pa-IN',
+};
 
 type ImageAttachment = {
   name: string;
@@ -53,7 +67,8 @@ type VoiceWindow = Window & {
 
 const copy = {
   vi: {
-    languageOther: 'English',
+    brandSubtitle: 'Hỗ trợ hành khách',
+    languageLabel: 'Chọn ngôn ngữ',
     eyebrow: 'HỖ TRỢ HÀNH KHÁCH VTA',
     title: 'Báo cáo vấn đề giao thông VTA',
     instruction: 'Hãy mô tả vấn đề bạn gặp phải khi sử dụng phương tiện giao thông công cộng.',
@@ -61,9 +76,9 @@ const copy = {
     stepOne: 'Bước 1 / 2',
     describeHeading: 'Điều gì đã xảy ra?',
     describeLabel: 'Mô tả vấn đề',
-    describeHint: 'Bạn có thể viết bằng tiếng Việt hoặc tiếng Anh',
+    describeHint: 'Bạn có thể viết hoặc nói bằng tiếng Việt, tiếng Anh, tiếng Tây Ban Nha hoặc tiếng Punjabi',
     placeholder: 'Ví dụ: Xe buýt của tôi bị trễ…',
-    voiceLabel: 'Speak',
+    voiceLabel: 'Nói',
     voiceStart: 'Nhấn để nói bằng tiếng Việt',
     voiceStop: 'Đang lắng nghe — nhấn để dừng',
     voiceUnavailable: 'Trình duyệt này không hỗ trợ nhập bằng giọng nói. Bạn có thể nhập bằng bàn phím.',
@@ -96,9 +111,11 @@ const copy = {
     newReport: 'Tạo báo cáo mới',
     safety: 'Nếu bạn đang gặp nguy hiểm ngay lập tức, hãy gọi 911.',
     readAloud: 'Đọc phản hồi',
+    footer: 'Hỗ trợ giao thông VTA · San José',
   },
   en: {
-    languageOther: 'Tiếng Việt',
+    brandSubtitle: 'Rider support',
+    languageLabel: 'Choose language',
     eyebrow: 'VTA RIDER SUPPORT',
     title: 'Report a VTA Transit Issue',
     instruction: 'Describe the problem you experienced while using public transportation.',
@@ -106,10 +123,10 @@ const copy = {
     stepOne: 'Step 1 / 2',
     describeHeading: 'What happened?',
     describeLabel: 'Describe the problem',
-    describeHint: 'You can write in Vietnamese or English',
+    describeHint: 'You can write or speak in Vietnamese, English, Spanish, or Punjabi',
     placeholder: 'For example: My bus was late…',
     voiceLabel: 'Speak',
-    voiceStart: 'Tap to speak in Vietnamese',
+    voiceStart: 'Tap to speak in English',
     voiceStop: 'Listening — tap to stop',
     voiceUnavailable: 'Voice input is not supported in this browser. You can type your report instead.',
     voiceError: 'We could not hear that. Please check microphone access and try again.',
@@ -141,33 +158,133 @@ const copy = {
     newReport: 'Create a new report',
     safety: 'If you are in immediate danger, call 911.',
     readAloud: 'Read response aloud',
+    footer: 'VTA Transit Support · San José',
+  },
+  es: {
+    brandSubtitle: 'Atención al pasajero',
+    languageLabel: 'Elegir idioma',
+    eyebrow: 'ATENCIÓN A PASAJEROS DE VTA',
+    title: 'Reportar un problema de transporte de VTA',
+    instruction: 'Describa el problema que tuvo al usar el transporte público.',
+    privacy: 'Su información solo se usará para ayudar a VTA a revisar su reporte.',
+    stepOne: 'Paso 1 / 2',
+    describeHeading: '¿Qué ocurrió?',
+    describeLabel: 'Describa el problema',
+    describeHint: 'Puede escribir o hablar en vietnamita, inglés, español o panyabí',
+    placeholder: 'Por ejemplo: Mi autobús llegó tarde…',
+    voiceLabel: 'Hablar',
+    voiceStart: 'Toque para hablar en español',
+    voiceStop: 'Escuchando — toque para detener',
+    voiceUnavailable: 'Este navegador no admite la entrada por voz. Puede escribir su reporte.',
+    voiceError: 'No pudimos escucharle. Revise el acceso al micrófono e inténtelo de nuevo.',
+    voiceTranscript: 'Transcripción en vivo',
+    imageHeading: 'Agregar una imagen (opcional)',
+    imageDescription: 'Una imagen puede ayudar a VTA a entender mejor el problema.',
+    chooseImage: 'Elegir una imagen',
+    imageHint: 'Una parada dañada, un letrero faltante, una rampa bloqueada…',
+    removeImage: 'Quitar imagen',
+    selectedImage: 'Imagen seleccionada',
+    send: 'Enviar reporte',
+    sending: 'Enviando reporte…',
+    sendHint: 'Su reporte se enviará al departamento de transporte de VTA.',
+    requiredError: 'Describa el problema o agregue una imagen antes de enviar.',
+    imageError: 'Elija un archivo de imagen.',
+    secureNote: 'Las imágenes no se cargan a un servicio externo. Permanecen en este navegador para este prototipo.',
+    stepTwo: 'Paso 2 / 2',
+    successEyebrow: 'REPORTE RECIBIDO',
+    successTitle: 'Gracias por informarnos.',
+    successBody: 'Su reporte se creó y se simuló su envío al departamento de transporte de VTA.',
+    responseHeading: 'Respuesta de VTA',
+    response: 'Gracias por ayudarnos a mejorar el servicio de transporte. Un miembro del personal de VTA revisará este problema y lo enviará al equipo adecuado.',
+    reportHeading: 'Reporte creado',
+    reportContent: 'Descripción del reporte',
+    reportImage: 'Imagen adjunta',
+    reportNoImage: 'No hay ninguna imagen adjunta',
+    reportReference: 'Número de reporte',
+    referenceHint: 'Use este número si necesita consultar sobre su reporte.',
+    newReport: 'Crear otro reporte',
+    safety: 'Si está en peligro inmediato, llame al 911.',
+    readAloud: 'Leer respuesta en voz alta',
+    footer: 'Atención de transporte de VTA · San José',
+  },
+  pa: {
+    brandSubtitle: 'ਯਾਤਰੀ ਸਹਾਇਤਾ',
+    languageLabel: 'ਭਾਸ਼ਾ ਚੁਣੋ',
+    eyebrow: 'VTA ਯਾਤਰੀ ਸਹਾਇਤਾ',
+    title: 'VTA ਆਵਾਜਾਈ ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
+    instruction: 'ਜਨਤਕ ਆਵਾਜਾਈ ਦੀ ਵਰਤੋਂ ਕਰਦੇ ਸਮੇਂ ਤੁਹਾਨੂੰ ਆਈ ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ।',
+    privacy: 'ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ ਸਿਰਫ਼ VTA ਨੂੰ ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਦੀ ਸਮੀਖਿਆ ਕਰਨ ਵਿੱਚ ਮਦਦ ਲਈ ਵਰਤੀ ਜਾਵੇਗੀ।',
+    stepOne: 'ਕਦਮ 1 / 2',
+    describeHeading: 'ਕੀ ਹੋਇਆ ਸੀ?',
+    describeLabel: 'ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ',
+    describeHint: 'ਤੁਸੀਂ ਪੰਜਾਬੀ, ਅੰਗਰੇਜ਼ੀ, ਸਪੇਨੀ ਜਾਂ ਵੀਅਤਨਾਮੀ ਵਿੱਚ ਲਿਖ ਜਾਂ ਬੋਲ ਸਕਦੇ ਹੋ',
+    placeholder: 'ਉਦਾਹਰਨ ਲਈ: ਮੇਰੀ ਬੱਸ ਦੇਰ ਨਾਲ ਆਈ…',
+    voiceLabel: 'ਬੋਲੋ',
+    voiceStart: 'ਪੰਜਾਬੀ ਵਿੱਚ ਬੋਲਣ ਲਈ ਟੈਪ ਕਰੋ',
+    voiceStop: 'ਸੁਣ ਰਿਹਾ ਹੈ — ਰੋਕਣ ਲਈ ਟੈਪ ਕਰੋ',
+    voiceUnavailable: 'ਇਹ ਬ੍ਰਾਊਜ਼ਰ ਆਵਾਜ਼ ਰਾਹੀਂ ਇਨਪੁੱਟ ਦਾ ਸਮਰਥਨ ਨਹੀਂ ਕਰਦਾ। ਤੁਸੀਂ ਆਪਣੀ ਰਿਪੋਰਟ ਟਾਈਪ ਕਰ ਸਕਦੇ ਹੋ।',
+    voiceError: 'ਅਸੀਂ ਤੁਹਾਡੀ ਆਵਾਜ਼ ਨਹੀਂ ਸੁਣ ਸਕੇ। ਮਾਈਕ੍ਰੋਫ਼ੋਨ ਦੀ ਇਜਾਜ਼ਤ ਜਾਂਚੋ ਅਤੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
+    voiceTranscript: 'ਲਾਈਵ ਲਿਖਤ',
+    imageHeading: 'ਤਸਵੀਰ ਸ਼ਾਮਲ ਕਰੋ (ਵਿਕਲਪਿਕ)',
+    imageDescription: 'ਤਸਵੀਰ VTA ਨੂੰ ਸਮੱਸਿਆ ਸਮਝਣ ਵਿੱਚ ਮਦਦ ਕਰ ਸਕਦੀ ਹੈ।',
+    chooseImage: 'ਇੱਕ ਤਸਵੀਰ ਚੁਣੋ',
+    imageHint: 'ਖਰਾਬ ਬੱਸ ਸਟਾਪ, ਗੁੰਮ ਨਿਸ਼ਾਨ, ਰੁਕਿਆ ਹੋਇਆ ਰੈਂਪ…',
+    removeImage: 'ਤਸਵੀਰ ਹਟਾਓ',
+    selectedImage: 'ਚੁਣੀ ਹੋਈ ਤਸਵੀਰ',
+    send: 'ਰਿਪੋਰਟ ਭੇਜੋ',
+    sending: 'ਰਿਪੋਰਟ ਭੇਜੀ ਜਾ ਰਹੀ ਹੈ…',
+    sendHint: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ VTA ਆਵਾਜਾਈ ਵਿਭਾਗ ਨੂੰ ਭੇਜੀ ਜਾਵੇਗੀ।',
+    requiredError: 'ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ ਜਾਂ ਤਸਵੀਰ ਸ਼ਾਮਲ ਕਰੋ।',
+    imageError: 'ਕਿਰਪਾ ਕਰਕੇ ਤਸਵੀਰ ਵਾਲੀ ਫ਼ਾਈਲ ਚੁਣੋ।',
+    secureNote: 'ਤਸਵੀਰਾਂ ਕਿਸੇ ਬਾਹਰੀ ਸੇਵਾ ਤੇ ਅੱਪਲੋਡ ਨਹੀਂ ਹੁੰਦੀਆਂ। ਇਸ ਪ੍ਰੋਟੋਟਾਈਪ ਲਈ ਇਹ ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਹੀ ਰਹਿੰਦੀਆਂ ਹਨ।',
+    stepTwo: 'ਕਦਮ 2 / 2',
+    successEyebrow: 'ਰਿਪੋਰਟ ਮਿਲ ਗਈ',
+    successTitle: 'ਦੱਸਣ ਲਈ ਤੁਹਾਡਾ ਧੰਨਵਾਦ।',
+    successBody: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਬਣਾਈ ਗਈ ਹੈ ਅਤੇ VTA ਆਵਾਜਾਈ ਵਿਭਾਗ ਨੂੰ ਭੇਜਣ ਦੀ ਨਕਲ ਕੀਤੀ ਗਈ ਹੈ।',
+    responseHeading: 'VTA ਵੱਲੋਂ ਜਵਾਬ',
+    response: 'ਆਵਾਜਾਈ ਸੇਵਾ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਵਿੱਚ ਮਦਦ ਕਰਨ ਲਈ ਧੰਨਵਾਦ। VTA ਦਾ ਇੱਕ ਕਰਮਚਾਰੀ ਇਸ ਸਮੱਸਿਆ ਦੀ ਸਮੀਖਿਆ ਕਰੇਗਾ ਅਤੇ ਇਸਨੂੰ ਸਹੀ ਟੀਮ ਤੱਕ ਪਹੁੰਚਾਏਗਾ।',
+    reportHeading: 'ਰਿਪੋਰਟ ਬਣਾਈ ਗਈ',
+    reportContent: 'ਰਿਪੋਰਟ ਦਾ ਵੇਰਵਾ',
+    reportImage: 'ਤਸਵੀਰ ਨੱਥੀ ਹੈ',
+    reportNoImage: 'ਕੋਈ ਤਸਵੀਰ ਨੱਥੀ ਨਹੀਂ',
+    reportReference: 'ਰਿਪੋਰਟ ਨੰਬਰ',
+    referenceHint: 'ਰਿਪੋਰਟ ਬਾਰੇ ਪੁੱਛਣ ਲਈ ਇਹ ਨੰਬਰ ਵਰਤੋ।',
+    newReport: 'ਨਵੀਂ ਰਿਪੋਰਟ ਬਣਾਓ',
+    safety: 'ਜੇ ਤੁਸੀਂ ਤੁਰੰਤ ਖ਼ਤਰੇ ਵਿੱਚ ਹੋ, ਤਾਂ 911 ਤੇ ਕਾਲ ਕਰੋ।',
+    readAloud: 'ਜਵਾਬ ਉੱਚੀ ਆਵਾਜ਼ ਵਿੱਚ ਸੁਣੋ',
+    footer: 'VTA ਆਵਾਜਾਈ ਸਹਾਇਤਾ · ਸੈਨ ਹੋਜ਼ੇ',
   },
 } as const;
 
-function Header({ language, onLanguageChange }: { language: Language; onLanguageChange: () => void }) {
+function Header({ language, onLanguageChange }: { language: Language; onLanguageChange: (language: Language) => void }) {
   const t = copy[language];
   return (
     <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card)/.92)]">
-      <div className="mx-auto flex min-h-[76px] max-w-4xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+      <div className="mx-auto flex min-h-[76px] max-w-4xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <div className="flex items-center gap-3" data-testid="brand-vta">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-[4px_4px_0_hsl(var(--accent))]">
             <BusFront size={24} strokeWidth={2.4} />
           </span>
           <div>
             <p className="text-base font-bold tracking-[-.03em]">VTA</p>
-            <p className="text-[11px] font-medium text-[hsl(var(--muted-foreground))]">Transit support</p>
+            <p className="text-[11px] font-medium text-[hsl(var(--muted-foreground))]">{t.brandSubtitle}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onLanguageChange}
-          className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-4 text-xs font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--secondary))]"
-          aria-label={`Switch language to ${t.languageOther}`}
-          data-testid="button-language-toggle"
-        >
-          <Languages size={16} />
-          <span>{t.languageOther}</span>
-        </button>
+        <nav className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2" aria-label={t.languageLabel} data-testid="language-switcher">
+          <Languages size={16} className="mr-1 text-[hsl(var(--muted-foreground))]" aria-hidden="true" />
+          {(Object.keys(languageNames) as Language[]).filter((option) => option !== language).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onLanguageChange(option)}
+              className="focus-ring inline-flex min-h-10 items-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 text-[11px] font-bold text-[hsl(var(--primary))] transition-colors hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))] sm:px-3.5 sm:text-xs"
+              aria-label={`Switch language to ${languageNames[option]}`}
+              data-testid={`button-language-${option}`}
+            >
+              {languageNames[option]}
+            </button>
+          ))}
+        </nav>
       </div>
     </header>
   );
