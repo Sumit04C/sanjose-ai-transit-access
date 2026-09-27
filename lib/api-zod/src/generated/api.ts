@@ -207,6 +207,7 @@ export const ListSubmissionsResponseItem = zod.object({
   "language": zod.enum(['vi', 'en', 'es', 'pa']),
   "imageName": zod.string().nullable(),
   "assistantResponse": zod.string(),
+  "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
   "submittedAt": zod.coerce.date()
 })
 export const ListSubmissionsResponse = zod.array(ListSubmissionsResponseItem)
@@ -234,6 +235,7 @@ export const CreateSubmissionResponse = zod.object({
   "language": zod.enum(['vi', 'en', 'es', 'pa']),
   "imageName": zod.string().nullable(),
   "assistantResponse": zod.string(),
+  "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
   "submittedAt": zod.coerce.date()
 })
 

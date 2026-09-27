@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SubmissionDataSource } from './submissionDataSource';
 import type { SubmissionLanguage } from './submissionLanguage';
 
 export interface RiderSubmission {
@@ -15,5 +16,6 @@ export interface RiderSubmission {
   /** @nullable */
   imageName: string | null;
   assistantResponse: string;
+  dataSource: SubmissionDataSource;
   submittedAt: Date;
 }

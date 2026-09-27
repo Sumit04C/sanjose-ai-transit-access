@@ -178,6 +178,9 @@ components:
     SubmissionLanguage:
       type: string
       enum: [vi, en, es, pa]
+    SubmissionDataSource:
+      type: string
+      enum: ["public dataset", "real document", "synthetic data"]
     RiderSubmissionInput:
       type: object
       properties:
@@ -205,10 +208,12 @@ components:
           type: ["string", "null"]
         assistantResponse:
           type: string
+        dataSource:
+          $ref: "#/components/schemas/SubmissionDataSource"
         submittedAt:
           type: string
           format: date-time
-      required: [id, reference, description, language, imageName, assistantResponse, submittedAt]
+      required: [id, reference, description, language, imageName, assistantResponse, dataSource, submittedAt]
     HealthStatus:
       type: object
       properties:

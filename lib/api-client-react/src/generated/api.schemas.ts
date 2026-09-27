@@ -15,6 +15,15 @@ export const SubmissionLanguage = {
   pa: 'pa',
 } as const;
 
+export type SubmissionDataSource = typeof SubmissionDataSource[keyof typeof SubmissionDataSource];
+
+
+export const SubmissionDataSource = {
+  public_dataset: 'public dataset',
+  real_document: 'real document',
+  synthetic_data: 'synthetic data',
+} as const;
+
 export interface RiderSubmissionInput {
   /** @maxLength 1000 */
   description: string;
@@ -34,6 +43,7 @@ export interface RiderSubmission {
   /** @nullable */
   imageName: string | null;
   assistantResponse: string;
+  dataSource: SubmissionDataSource;
   submittedAt: string;
 }
 

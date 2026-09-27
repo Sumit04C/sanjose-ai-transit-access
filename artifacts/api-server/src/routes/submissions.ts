@@ -55,6 +55,7 @@ router.post("/submissions", async (req, res): Promise<void> => {
         language,
         imageName,
         assistantResponse: prototypeResponses[language],
+        dataSource: "real document",
       })
       .returning();
 

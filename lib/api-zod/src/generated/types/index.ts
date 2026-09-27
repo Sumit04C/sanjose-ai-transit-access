@@ -19,5 +19,6 @@ export * from './reportStatus';
 export * from './reportStatusInput';
 export * from './riderSubmission';
 export * from './riderSubmissionInput';
+export * from './submissionDataSource';
 export * from './submissionLanguage';
 export * from './transitReport';

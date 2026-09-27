@@ -11,6 +11,7 @@ const content = {
     introduction: 'Các báo cáo mới nhất được hiển thị trước, cùng với nội dung đã gửi và phản hồi mẫu.',
     input: 'Nội dung đã gửi',
     response: 'Phản hồi đã lưu',
+    dataSource: 'Nguồn dữ liệu',
     attachment: 'Hình ảnh đã chọn',
     language: 'Ngôn ngữ',
     loading: 'Đang tải các báo cáo…',
@@ -28,6 +29,7 @@ const content = {
     introduction: 'Newest reports appear first, with the submitted input and saved prototype response.',
     input: 'Submitted input',
     response: 'Saved response',
+    dataSource: 'Data source',
     attachment: 'Selected image',
     language: 'Language',
     loading: 'Loading reports…',
@@ -45,6 +47,7 @@ const content = {
     introduction: 'Los reportes más recientes aparecen primero, con el contenido enviado y la respuesta de ejemplo guardada.',
     input: 'Contenido enviado',
     response: 'Respuesta guardada',
+    dataSource: 'Origen de datos',
     attachment: 'Imagen seleccionada',
     language: 'Idioma',
     loading: 'Cargando reportes…',
@@ -62,6 +65,7 @@ const content = {
     introduction: 'ਨਵੀਆਂ ਰਿਪੋਰਟਾਂ ਸਭ ਤੋਂ ਉੱਪਰ ਹਨ, ਨਾਲ ਭੇਜਿਆ ਵੇਰਵਾ ਅਤੇ ਸੰਭਾਲਿਆ ਨਮੂਨਾ ਜਵਾਬ ਦਿੱਤਾ ਗਿਆ ਹੈ।',
     input: 'ਭੇਜਿਆ ਵੇਰਵਾ',
     response: 'ਸੰਭਾਲਿਆ ਜਵਾਬ',
+    dataSource: 'ਡੇਟਾ ਸਰੋਤ',
     attachment: 'ਚੁਣੀ ਹੋਈ ਤਸਵੀਰ',
     language: 'ਭਾਸ਼ਾ',
     loading: 'ਰਿਪੋਰਟਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ…',
@@ -97,6 +101,7 @@ function SubmissionCard({ submission, language }: { submission: RiderSubmission;
         <div>
           <p className="font-mono text-sm font-bold text-[hsl(var(--primary))]" data-testid={`text-reference-${submission.id}`}>{submission.reference}</p>
           <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{t.language}: {inputLanguages[submission.language]}</p>
+          <p className="mt-1 text-xs font-semibold text-[hsl(var(--muted-foreground))]" data-testid={`text-data-source-${submission.id}`}>{t.dataSource}: {submission.dataSource}</p>
         </div>
         <time dateTime={submission.submittedAt} className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))]" data-testid={`text-submitted-at-${submission.id}`}>
           <Clock3 size={15} />
