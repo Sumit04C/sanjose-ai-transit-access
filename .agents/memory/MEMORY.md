@@ -1,0 +1,1 @@
+- [Transit prototype persistence](transit-prototype-persistence.md) — keep the fixed response and browser-local image rule unless the user changes those requirements.

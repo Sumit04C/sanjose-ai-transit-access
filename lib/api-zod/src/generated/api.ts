@@ -197,3 +197,44 @@ export const GetRecentReportActivityResponseItem = zod.object({
 export const GetRecentReportActivityResponse = zod.array(GetRecentReportActivityResponseItem)
 
 
+/**
+ * @summary List rider submissions, newest first
+ */
+export const ListSubmissionsResponseItem = zod.object({
+  "id": zod.string(),
+  "reference": zod.string(),
+  "description": zod.string(),
+  "language": zod.enum(['vi', 'en', 'es', 'pa']),
+  "imageName": zod.string().nullable(),
+  "assistantResponse": zod.string(),
+  "submittedAt": zod.coerce.date()
+})
+export const ListSubmissionsResponse = zod.array(ListSubmissionsResponseItem)
+
+
+/**
+ * @summary Save a rider submission and its prototype response
+ */
+export const createSubmissionBodyDescriptionMax = 1000;
+
+export const createSubmissionBodyImageNameMax = 255;
+
+
+
+export const CreateSubmissionBody = zod.object({
+  "description": zod.string().max(createSubmissionBodyDescriptionMax),
+  "language": zod.enum(['vi', 'en', 'es', 'pa']),
+  "imageName": zod.string().max(createSubmissionBodyImageNameMax).nullable()
+})
+
+export const CreateSubmissionResponse = zod.object({
+  "id": zod.string(),
+  "reference": zod.string(),
+  "description": zod.string(),
+  "language": zod.enum(['vi', 'en', 'es', 'pa']),
+  "imageName": zod.string().nullable(),
+  "assistantResponse": zod.string(),
+  "submittedAt": zod.coerce.date()
+})
+
+

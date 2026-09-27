@@ -1,4 +1,10 @@
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Link, Route, Switch, useLocation } from 'wouter';
+import { getListSubmissionsQueryKey, useCreateSubmission } from '@workspace/api-client-react';
+import type { RiderSubmission } from '@workspace/api-client-react';
+import NotFound from '@/pages/not-found';
+import RecordsPage from '@/pages/records';
 import {
   AlertCircle,
   ArrowLeft,
@@ -17,7 +23,9 @@ import {
   X,
 } from 'lucide-react';
 
-type Language = 'vi' | 'en' | 'es' | 'pa';
+export type Language = 'vi' | 'en' | 'es' | 'pa';
+
+const queryClient = new QueryClient();
 
 const languageNames: Record<Language, string> = {
   vi: 'Tiếng Việt',
@@ -69,10 +77,16 @@ const copy = {
   vi: {
     brandSubtitle: 'Hỗ trợ hành khách',
     languageLabel: 'Chọn ngôn ngữ',
+    pagesLabel: 'Các trang',
+    reportNav: 'Báo cáo vấn đề',
+    recordsNav: 'Các báo cáo đã lưu',
+    viewRecords: 'Xem các báo cáo đã lưu',
+    submittedLabel: 'Thời điểm gửi',
+    submitError: 'Không thể lưu báo cáo. Vui lòng thử lại.',
     eyebrow: 'HỖ TRỢ HÀNH KHÁCH VTA',
     title: 'Báo cáo vấn đề giao thông VTA',
     instruction: 'Hãy mô tả vấn đề bạn gặp phải khi sử dụng phương tiện giao thông công cộng.',
-    privacy: 'Thông tin của bạn chỉ được dùng để giúp VTA xử lý báo cáo.',
+    privacy: 'Bản thử nghiệm: các báo cáo đã lưu có thể xem trên trang báo cáo.',
     stepOne: 'Bước 1 / 2',
     describeHeading: 'Điều gì đã xảy ra?',
     describeLabel: 'Mô tả vấn đề',
@@ -92,16 +106,16 @@ const copy = {
     selectedImage: 'Hình ảnh đã chọn',
     send: 'Gửi báo cáo',
     sending: 'Đang gửi báo cáo…',
-    sendHint: 'Báo cáo sẽ được chuyển đến bộ phận VTA.',
+    sendHint: 'Lưu trong bản thử nghiệm; chưa thực sự gửi đến VTA.',
     requiredError: 'Vui lòng mô tả vấn đề hoặc thêm một hình ảnh trước khi gửi.',
     imageError: 'Vui lòng chọn một tệp hình ảnh.',
     secureNote: 'Không tải hình ảnh lên dịch vụ bên ngoài. Hình ảnh chỉ được giữ trong trình duyệt cho bản thử nghiệm này.',
     stepTwo: 'Bước 2 / 2',
     successEyebrow: 'ĐÃ TIẾP NHẬN BÁO CÁO',
     successTitle: 'Cảm ơn bạn đã lên tiếng.',
-    successBody: 'Báo cáo của bạn đã được tạo và mô phỏng gửi đến bộ phận giao thông VTA.',
-    responseHeading: 'Phản hồi từ VTA',
-    response: 'Cảm ơn bạn đã giúp chúng tôi cải thiện dịch vụ. Nhân viên VTA sẽ xem xét vấn đề này và chuyển đến nhóm phù hợp.',
+    successBody: 'Báo cáo của bạn đã được lưu trong bản thử nghiệm, chưa thực sự gửi đến VTA.',
+    responseHeading: 'Phản hồi mẫu',
+    responseNote: 'Đây là phản hồi có sẵn, không phải do AI tạo ra.',
     reportHeading: 'Báo cáo đã tạo',
     reportContent: 'Nội dung báo cáo',
     reportImage: 'Có hình ảnh đính kèm',
@@ -116,10 +130,16 @@ const copy = {
   en: {
     brandSubtitle: 'Rider support',
     languageLabel: 'Choose language',
+    pagesLabel: 'Pages',
+    reportNav: 'Report an issue',
+    recordsNav: 'Saved reports',
+    viewRecords: 'View saved reports',
+    submittedLabel: 'Submitted',
+    submitError: 'We could not save your report. Please try again.',
     eyebrow: 'VTA RIDER SUPPORT',
     title: 'Report a VTA Transit Issue',
     instruction: 'Describe the problem you experienced while using public transportation.',
-    privacy: 'Your information is only used to help VTA review your report.',
+    privacy: 'Prototype: saved reports are visible on the records page.',
     stepOne: 'Step 1 / 2',
     describeHeading: 'What happened?',
     describeLabel: 'Describe the problem',
@@ -139,16 +159,16 @@ const copy = {
     selectedImage: 'Selected image',
     send: 'Send report',
     sending: 'Sending report…',
-    sendHint: 'Your report will be sent to the VTA transit department.',
+    sendHint: 'Saved in this prototype; not actually sent to VTA.',
     requiredError: 'Please describe the problem or add an image before sending.',
     imageError: 'Please choose an image file.',
     secureNote: 'Images are not uploaded to an external service. They stay in this browser for this prototype.',
     stepTwo: 'Step 2 / 2',
     successEyebrow: 'REPORT RECEIVED',
     successTitle: 'Thank you for speaking up.',
-    successBody: 'Your report was created and simulated as sent to the VTA transit department.',
-    responseHeading: 'A response from VTA',
-    response: 'Thank you for helping us improve transit service. A VTA staff member will review this issue and route it to the right team.',
+    successBody: 'Your report was saved in this prototype, but it was not actually sent to VTA.',
+    responseHeading: 'Prototype response',
+    responseNote: 'This is a fixed response, not AI-generated.',
     reportHeading: 'Report created',
     reportContent: 'Report description',
     reportImage: 'Image attached',
@@ -163,10 +183,16 @@ const copy = {
   es: {
     brandSubtitle: 'Atención al pasajero',
     languageLabel: 'Elegir idioma',
+    pagesLabel: 'Páginas',
+    reportNav: 'Reportar un problema',
+    recordsNav: 'Reportes guardados',
+    viewRecords: 'Ver reportes guardados',
+    submittedLabel: 'Fecha de envío',
+    submitError: 'No pudimos guardar su reporte. Inténtelo de nuevo.',
     eyebrow: 'ATENCIÓN A PASAJEROS DE VTA',
     title: 'Reportar un problema de transporte de VTA',
     instruction: 'Describa el problema que tuvo al usar el transporte público.',
-    privacy: 'Su información solo se usará para ayudar a VTA a revisar su reporte.',
+    privacy: 'Prototipo: los reportes guardados se pueden ver en la página de reportes.',
     stepOne: 'Paso 1 / 2',
     describeHeading: '¿Qué ocurrió?',
     describeLabel: 'Describa el problema',
@@ -186,16 +212,16 @@ const copy = {
     selectedImage: 'Imagen seleccionada',
     send: 'Enviar reporte',
     sending: 'Enviando reporte…',
-    sendHint: 'Su reporte se enviará al departamento de transporte de VTA.',
+    sendHint: 'Se guarda en este prototipo; no se envía realmente a VTA.',
     requiredError: 'Describa el problema o agregue una imagen antes de enviar.',
     imageError: 'Elija un archivo de imagen.',
     secureNote: 'Las imágenes no se cargan a un servicio externo. Permanecen en este navegador para este prototipo.',
     stepTwo: 'Paso 2 / 2',
     successEyebrow: 'REPORTE RECIBIDO',
     successTitle: 'Gracias por informarnos.',
-    successBody: 'Su reporte se creó y se simuló su envío al departamento de transporte de VTA.',
-    responseHeading: 'Respuesta de VTA',
-    response: 'Gracias por ayudarnos a mejorar el servicio de transporte. Un miembro del personal de VTA revisará este problema y lo enviará al equipo adecuado.',
+    successBody: 'Su reporte se guardó en este prototipo, pero no se envió realmente a VTA.',
+    responseHeading: 'Respuesta de ejemplo',
+    responseNote: 'Es una respuesta fija, no generada por IA.',
     reportHeading: 'Reporte creado',
     reportContent: 'Descripción del reporte',
     reportImage: 'Imagen adjunta',
@@ -210,10 +236,16 @@ const copy = {
   pa: {
     brandSubtitle: 'ਯਾਤਰੀ ਸਹਾਇਤਾ',
     languageLabel: 'ਭਾਸ਼ਾ ਚੁਣੋ',
+    pagesLabel: 'ਪੰਨੇ',
+    reportNav: 'ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
+    recordsNav: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ',
+    viewRecords: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਵੇਖੋ',
+    submittedLabel: 'ਭੇਜਣ ਦਾ ਸਮਾਂ',
+    submitError: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਸੰਭਾਲੀ ਨਹੀਂ ਜਾ ਸਕੀ। ਕਿਰਪਾ ਕਰਕੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
     eyebrow: 'VTA ਯਾਤਰੀ ਸਹਾਇਤਾ',
     title: 'VTA ਆਵਾਜਾਈ ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
     instruction: 'ਜਨਤਕ ਆਵਾਜਾਈ ਦੀ ਵਰਤੋਂ ਕਰਦੇ ਸਮੇਂ ਤੁਹਾਨੂੰ ਆਈ ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ।',
-    privacy: 'ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ ਸਿਰਫ਼ VTA ਨੂੰ ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਦੀ ਸਮੀਖਿਆ ਕਰਨ ਵਿੱਚ ਮਦਦ ਲਈ ਵਰਤੀ ਜਾਵੇਗੀ।',
+    privacy: 'ਨਮੂਨਾ ਐਪ: ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਰਿਪੋਰਟਾਂ ਵਾਲੇ ਪੰਨੇ ਤੇ ਵੇਖੀਆਂ ਜਾ ਸਕਦੀਆਂ ਹਨ।',
     stepOne: 'ਕਦਮ 1 / 2',
     describeHeading: 'ਕੀ ਹੋਇਆ ਸੀ?',
     describeLabel: 'ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ',
@@ -233,16 +265,16 @@ const copy = {
     selectedImage: 'ਚੁਣੀ ਹੋਈ ਤਸਵੀਰ',
     send: 'ਰਿਪੋਰਟ ਭੇਜੋ',
     sending: 'ਰਿਪੋਰਟ ਭੇਜੀ ਜਾ ਰਹੀ ਹੈ…',
-    sendHint: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ VTA ਆਵਾਜਾਈ ਵਿਭਾਗ ਨੂੰ ਭੇਜੀ ਜਾਵੇਗੀ।',
+    sendHint: 'ਇਸ ਨਮੂਨਾ ਐਪ ਵਿੱਚ ਸੰਭਾਲੀ ਜਾਵੇਗੀ; ਅਸਲ ਵਿੱਚ VTA ਨੂੰ ਨਹੀਂ ਭੇਜੀ ਜਾਵੇਗੀ।',
     requiredError: 'ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ ਜਾਂ ਤਸਵੀਰ ਸ਼ਾਮਲ ਕਰੋ।',
     imageError: 'ਕਿਰਪਾ ਕਰਕੇ ਤਸਵੀਰ ਵਾਲੀ ਫ਼ਾਈਲ ਚੁਣੋ।',
     secureNote: 'ਤਸਵੀਰਾਂ ਕਿਸੇ ਬਾਹਰੀ ਸੇਵਾ ਤੇ ਅੱਪਲੋਡ ਨਹੀਂ ਹੁੰਦੀਆਂ। ਇਸ ਪ੍ਰੋਟੋਟਾਈਪ ਲਈ ਇਹ ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਹੀ ਰਹਿੰਦੀਆਂ ਹਨ।',
     stepTwo: 'ਕਦਮ 2 / 2',
     successEyebrow: 'ਰਿਪੋਰਟ ਮਿਲ ਗਈ',
     successTitle: 'ਦੱਸਣ ਲਈ ਤੁਹਾਡਾ ਧੰਨਵਾਦ।',
-    successBody: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਬਣਾਈ ਗਈ ਹੈ ਅਤੇ VTA ਆਵਾਜਾਈ ਵਿਭਾਗ ਨੂੰ ਭੇਜਣ ਦੀ ਨਕਲ ਕੀਤੀ ਗਈ ਹੈ।',
-    responseHeading: 'VTA ਵੱਲੋਂ ਜਵਾਬ',
-    response: 'ਆਵਾਜਾਈ ਸੇਵਾ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਵਿੱਚ ਮਦਦ ਕਰਨ ਲਈ ਧੰਨਵਾਦ। VTA ਦਾ ਇੱਕ ਕਰਮਚਾਰੀ ਇਸ ਸਮੱਸਿਆ ਦੀ ਸਮੀਖਿਆ ਕਰੇਗਾ ਅਤੇ ਇਸਨੂੰ ਸਹੀ ਟੀਮ ਤੱਕ ਪਹੁੰਚਾਏਗਾ।',
+    successBody: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਇਸ ਨਮੂਨਾ ਐਪ ਵਿੱਚ ਸੰਭਾਲੀ ਗਈ ਹੈ, ਪਰ ਅਸਲ ਵਿੱਚ VTA ਨੂੰ ਨਹੀਂ ਭੇਜੀ ਗਈ।',
+    responseHeading: 'ਨਮੂਨਾ ਜਵਾਬ',
+    responseNote: 'ਇਹ ਪਹਿਲਾਂ ਤੋਂ ਲਿਖਿਆ ਜਵਾਬ ਹੈ, AI ਨੇ ਨਹੀਂ ਬਣਾਇਆ।',
     reportHeading: 'ਰਿਪੋਰਟ ਬਣਾਈ ਗਈ',
     reportContent: 'ਰਿਪੋਰਟ ਦਾ ਵੇਰਵਾ',
     reportImage: 'ਤਸਵੀਰ ਨੱਥੀ ਹੈ',
@@ -258,6 +290,7 @@ const copy = {
 
 function Header({ language, onLanguageChange }: { language: Language; onLanguageChange: (language: Language) => void }) {
   const t = copy[language];
+  const [location] = useLocation();
   return (
     <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card)/.92)]">
       <div className="mx-auto flex min-h-[76px] max-w-4xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -286,6 +319,10 @@ function Header({ language, onLanguageChange }: { language: Language; onLanguage
           ))}
         </nav>
       </div>
+      <nav className="mx-auto flex max-w-4xl gap-2 px-5 pb-3 sm:px-8" aria-label={t.pagesLabel}>
+        <Link href="/" aria-current={location === '/' ? 'page' : undefined} className={`focus-ring rounded-full px-4 py-2 text-xs font-bold transition-colors ${location === '/' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-report-page">{t.reportNav}</Link>
+        <Link href="/records" aria-current={location === '/records' ? 'page' : undefined} className={`focus-ring rounded-full px-4 py-2 text-xs font-bold transition-colors ${location === '/records' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-records-page">{t.recordsNav}</Link>
+      </nav>
     </header>
   );
 }
@@ -337,16 +374,16 @@ function ReportForm({
   onSubmitted,
 }: {
   language: Language;
-  onSubmitted: (description: string, image: ImageAttachment | null) => void;
+  onSubmitted: (report: RiderSubmission, image: ImageAttachment | null) => void;
 }) {
   const t = copy[language];
+  const createSubmission = useCreateSubmission();
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<ImageAttachment | null>(null);
   const [error, setError] = useState('');
   const [voiceMessage, setVoiceMessage] = useState('');
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const voiceRef = useRef<VoiceRecognition | null>(null);
 
   useEffect(() => {
@@ -428,10 +465,17 @@ function ReportForm({
       setError(t.requiredError);
       return;
     }
-    setIsSending(true);
-    window.setTimeout(() => {
-      onSubmitted(description.trim(), image);
-    }, 650);
+    createSubmission.mutate(
+      { data: { description: description.trim(), language, imageName: image?.name ?? null } },
+      {
+        onSuccess: (report) => {
+          queryClient.invalidateQueries({ queryKey: getListSubmissionsQueryKey() });
+          onSubmitted(report, image);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        onError: () => setError(t.submitError),
+      },
+    );
   };
 
   return (
@@ -521,15 +565,15 @@ function ReportForm({
 
       <button
         type="submit"
-        disabled={isSending}
+        disabled={createSubmission.isPending}
         className="focus-ring flex min-h-[60px] w-full items-center justify-between gap-4 rounded-2xl bg-[hsl(var(--primary))] px-5 text-left text-[hsl(var(--primary-foreground))] shadow-[5px_5px_0_hsl(var(--accent))] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-75 sm:px-7"
         data-testid="button-submit-report"
       >
         <span>
-          <span className="block text-base font-bold">{isSending ? t.sending : t.send}</span>
+          <span className="block text-base font-bold">{createSubmission.isPending ? t.sending : t.send}</span>
           <span className="mt-1 block text-xs text-[hsl(var(--primary-foreground)/.72)]">{t.sendHint}</span>
         </span>
-        {isSending ? <Loader2 size={23} className="animate-spin" /> : <Send size={22} />}
+        {createSubmission.isPending ? <Loader2 size={23} className="animate-spin" /> : <Send size={22} />}
       </button>
     </form>
   );
@@ -537,23 +581,22 @@ function ReportForm({
 
 function SubmittedReport({
   language,
-  description,
+  report,
   image,
   onNewReport,
 }: {
   language: Language;
-  description: string;
+  report: RiderSubmission;
   image: ImageAttachment | null;
   onNewReport: () => void;
 }) {
   const t = copy[language];
-  const [reference] = useState(() => `VTA-${Math.floor(100000 + Math.random() * 900000)}`);
 
   const speakResponse = () => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(t.response);
-    utterance.lang = voiceLocales[language];
+    const utterance = new SpeechSynthesisUtterance(report.assistantResponse);
+    utterance.lang = voiceLocales[report.language];
     window.speechSynthesis.speak(utterance);
   };
 
@@ -574,7 +617,8 @@ function SubmittedReport({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-[hsl(var(--primary))]">{t.responseHeading}</p>
-                <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground))]">{t.response}</p>
+                <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground))]" data-testid="text-assistant-response">{report.assistantResponse}</p>
+                <p className="mt-2 text-xs leading-5 text-[hsl(var(--muted-foreground))]">{t.responseNote}</p>
               </div>
               <button
                 type="button"
@@ -593,10 +637,10 @@ function SubmittedReport({
             <p className="mb-3 text-xs font-bold uppercase tracking-[.12em] text-[hsl(var(--muted-foreground))]">{t.reportHeading}</p>
             <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-4">
               <p className="text-xs font-bold text-[hsl(var(--muted-foreground))]">{t.reportContent}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-7" data-testid="text-report-description">{description || t.reportImage}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-7" data-testid="text-report-description">{report.description || t.reportImage}</p>
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-[hsl(var(--primary))]" data-testid="status-report-image">
                 <ImagePlus size={15} />
-                {image ? t.reportImage : t.reportNoImage}
+                {image ? `${t.reportImage}: ${report.imageName}` : t.reportNoImage}
               </div>
             </div>
           </div>
@@ -604,20 +648,18 @@ function SubmittedReport({
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[hsl(var(--secondary))] p-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[.1em] text-[hsl(var(--muted-foreground))]">{t.reportReference}</p>
-              <p className="mt-1 font-mono text-lg font-bold text-[hsl(var(--primary))]" data-testid="text-report-reference">{reference}</p>
+              <p className="mt-1 font-mono text-lg font-bold text-[hsl(var(--primary))]" data-testid="text-report-reference">{report.reference}</p>
             </div>
             <p className="max-w-[220px] text-right text-xs leading-5 text-[hsl(var(--muted-foreground))]">{t.referenceHint}</p>
           </div>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]" data-testid="text-submitted-at">{t.submittedLabel}: <time dateTime={report.submittedAt}>{new Intl.DateTimeFormat(voiceLocales[language], { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.submittedAt))}</time></p>
 
-          <button
-            type="button"
-            onClick={onNewReport}
-            className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--secondary))]"
-            data-testid="button-new-report"
-          >
-            <ArrowLeft size={17} />
-            {t.newReport}
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button type="button" onClick={onNewReport} className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--secondary))]" data-testid="button-new-report">
+              <ArrowLeft size={17} />{t.newReport}
+            </button>
+            <Link href="/records" className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] hover:opacity-90" data-testid="link-view-records">{t.viewRecords}</Link>
+          </div>
         </div>
       </section>
       <p className="flex items-center justify-center gap-2 px-3 text-center text-xs leading-5 text-[hsl(var(--muted-foreground))]" data-testid="text-safety-note">
@@ -628,20 +670,23 @@ function SubmittedReport({
   );
 }
 
-export default function App() {
+function TransitApp() {
   const [language, setLanguage] = useState<Language>('vi');
-  const [submitted, setSubmitted] = useState<{ description: string; image: ImageAttachment | null } | null>(null);
+  const [submitted, setSubmitted] = useState<{ report: RiderSubmission; image: ImageAttachment | null } | null>(null);
   const t = copy[language];
+  const [location] = useLocation();
 
   useEffect(() => {
     document.documentElement.lang = language;
-    document.title = t.title;
-  }, [language, t.title]);
+    document.title = location === '/records' ? `${t.recordsNav} | VTA` : t.title;
+  }, [language, location, t.recordsNav, t.title]);
 
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
       <Header language={language} onLanguageChange={setLanguage} />
       <main className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
+        <Switch>
+        <Route path="/">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8 flex items-center justify-between gap-4">
             <span className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-[hsl(var(--primary))]" data-testid="text-step">
@@ -661,16 +706,24 @@ export default function App() {
                 <h1 className="max-w-2xl text-4xl font-bold leading-[.98] tracking-[-.065em] sm:text-6xl" data-testid="text-page-title">{t.title}</h1>
                 <p className="mt-5 max-w-xl text-base leading-7 text-[hsl(var(--muted-foreground))]">{t.instruction}</p>
               </div>
-              <ReportForm language={language} onSubmitted={(description, image) => setSubmitted({ description, image })} />
+              <ReportForm language={language} onSubmitted={(report, image) => setSubmitted({ report, image })} />
             </>
           ) : (
-            <SubmittedReport language={language} description={submitted.description} image={submitted.image} onNewReport={() => setSubmitted(null)} />
+            <SubmittedReport language={language} report={submitted.report} image={submitted.image} onNewReport={() => setSubmitted(null)} />
           )}
         </div>
+        </Route>
+        <Route path="/records"><RecordsPage language={language} /></Route>
+        <Route component={NotFound} />
+        </Switch>
       </main>
       <footer className="border-t border-[hsl(var(--border))] px-5 py-6 text-center text-xs text-[hsl(var(--muted-foreground))]">
         {t.footer}
       </footer>
     </div>
   );
+}
+
+export default function App() {
+  return <QueryClientProvider client={queryClient}><TransitApp /></QueryClientProvider>;
 }

@@ -14,6 +14,8 @@ tags:
     description: Transit issue reports
   - name: dashboard
     description: Department review dashboard
+  - name: submissions
+    description: Rider issue submissions and stored prototype responses
 paths:
   /healthz:
     get:
@@ -140,8 +142,73 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReportActivity"
+  /submissions:
+    get:
+      operationId: listSubmissions
+      tags: [submissions]
+      summary: List rider submissions, newest first
+      responses:
+        "200":
+          description: Rider submissions in reverse chronological order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RiderSubmission"
+    post:
+      operationId: createSubmission
+      tags: [submissions]
+      summary: Save a rider submission and its prototype response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RiderSubmissionInput"
+      responses:
+        "201":
+          description: Saved submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiderSubmission"
 components:
   schemas:
+    SubmissionLanguage:
+      type: string
+      enum: [vi, en, es, pa]
+    RiderSubmissionInput:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 1000
+        language:
+          $ref: "#/components/schemas/SubmissionLanguage"
+        imageName:
+          type: ["string", "null"]
+          maxLength: 255
+      required: [description, language, imageName]
+    RiderSubmission:
+      type: object
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        description:
+          type: string
+        language:
+          $ref: "#/components/schemas/SubmissionLanguage"
+        imageName:
+          type: ["string", "null"]
+        assistantResponse:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+      required: [id, reference, description, language, imageName, assistantResponse, submittedAt]
     HealthStatus:
       type: object
       properties:

@@ -5,6 +5,38 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type SubmissionLanguage = typeof SubmissionLanguage[keyof typeof SubmissionLanguage];
+
+
+export const SubmissionLanguage = {
+  vi: 'vi',
+  en: 'en',
+  es: 'es',
+  pa: 'pa',
+} as const;
+
+export interface RiderSubmissionInput {
+  /** @maxLength 1000 */
+  description: string;
+  language: SubmissionLanguage;
+  /**
+     * @maxLength 255
+     * @nullable
+     */
+  imageName: string | null;
+}
+
+export interface RiderSubmission {
+  id: string;
+  reference: string;
+  description: string;
+  language: SubmissionLanguage;
+  /** @nullable */
+  imageName: string | null;
+  assistantResponse: string;
+  submittedAt: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
