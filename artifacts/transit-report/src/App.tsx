@@ -76,6 +76,7 @@ type VoiceWindow = Window & {
 const copy = {
   vi: {
     brandSubtitle: 'Hỗ trợ hành khách',
+    projectNotice: 'Dự án lớp học. Không dùng để gửi báo cáo giao thông thực tế.',
     languageLabel: 'Chọn ngôn ngữ',
     pagesLabel: 'Các trang',
     reportNav: 'Báo cáo vấn đề',
@@ -129,6 +130,7 @@ const copy = {
   },
   en: {
     brandSubtitle: 'Rider support',
+    projectNotice: 'Class project only. Not for real transit reporting.',
     languageLabel: 'Choose language',
     pagesLabel: 'Pages',
     reportNav: 'Report an issue',
@@ -182,6 +184,7 @@ const copy = {
   },
   es: {
     brandSubtitle: 'Atención al pasajero',
+    projectNotice: 'Solo para un proyecto de clase. No se debe usar para reportes reales de transporte.',
     languageLabel: 'Elegir idioma',
     pagesLabel: 'Páginas',
     reportNav: 'Reportar un problema',
@@ -235,6 +238,7 @@ const copy = {
   },
   pa: {
     brandSubtitle: 'ਯਾਤਰੀ ਸਹਾਇਤਾ',
+    projectNotice: 'ਸਿਰਫ਼ ਕਲਾਸ ਪ੍ਰੋਜੈਕਟ। ਅਸਲ ਆਵਾਜਾਈ ਰਿਪੋਰਟਾਂ ਲਈ ਨਹੀਂ।',
     languageLabel: 'ਭਾਸ਼ਾ ਚੁਣੋ',
     pagesLabel: 'ਪੰਨੇ',
     reportNav: 'ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
@@ -684,6 +688,15 @@ function TransitApp() {
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
       <Header language={language} onLanguageChange={setLanguage} />
+      <div
+        className="border-b border-[hsl(var(--accent)/.75)] bg-[hsl(var(--secondary))] px-4 py-2.5"
+        role="note"
+        data-testid="notice-class-project"
+      >
+        <p className="mx-auto max-w-4xl text-center text-xs font-semibold leading-5 text-[hsl(var(--primary))] sm:text-sm">
+          {t.projectNotice}
+        </p>
+      </div>
       <main className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-4xl px-4 py-6 sm:px-8 sm:py-12">
         <Switch>
         <Route path="/">
