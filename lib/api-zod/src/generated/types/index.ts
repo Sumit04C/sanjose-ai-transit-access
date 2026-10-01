@@ -8,6 +8,7 @@
 
 export * from './accessCodeInput';
 export * from './accessStatus';
+export * from './getTransitMatchesParams';
 export * from './healthStatus';
 export * from './listReportsParams';
 export * from './listReportsStatus';
@@ -21,6 +22,10 @@ export * from './reportStatus';
 export * from './reportStatusInput';
 export * from './riderSubmission';
 export * from './riderSubmissionInput';
+export * from './riderSubmissionResponseKind';
 export * from './submissionDataSource';
 export * from './submissionLanguage';
+export * from './transitCandidate';
+export * from './transitMatches';
 export * from './transitReport';
+export * from './transitSnapshot';

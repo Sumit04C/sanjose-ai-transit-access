@@ -1,1 +1,1 @@
-- [Transit prototype persistence](transit-prototype-persistence.md) — keep the fixed response and browser-local image rule unless the user changes those requirements.
+- [Transit prototype persistence](transit-prototype-persistence.md) — grounded text AI is authorized; browser-local images remain private and are not sent to AI.

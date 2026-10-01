@@ -22,6 +22,7 @@ import type {
 import type {
   AccessCodeInput,
   AccessStatus,
+  GetTransitMatchesParams,
   HealthStatus,
   ListReportsParams,
   ReportActivity,
@@ -30,6 +31,7 @@ import type {
   ReportStatusInput,
   RiderSubmission,
   RiderSubmissionInput,
+  TransitMatches,
   TransitReport
 } from './api.schemas';
 
@@ -881,7 +883,7 @@ export const getCreateSubmissionUrl = () => {
 }
 
 /**
- * @summary Save a rider submission and its prototype response
+ * @summary Save a rider submission, grounded response and source snapshots
  */
 export const createSubmission = async (riderSubmissionInput: RiderSubmissionInput, options?: Parameters<typeof customFetch>[1]): Promise<RiderSubmission> => {
 
@@ -947,7 +949,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateSubmissionMutationVariables = {data: BodyType<RiderSubmissionInput>}
 
     /**
- * @summary Save a rider submission and its prototype response
+ * @summary Save a rider submission, grounded response and source snapshots
  */
 export const useCreateSubmission = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubmission>>, TError,CreateSubmissionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -959,4 +961,88 @@ export const useCreateSubmission = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateSubmissionMutationOptions(options));
     }
+
+export const getGetTransitMatchesUrl = (params?: GetTransitMatchesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/transit/matches?${stringifiedParams}` : `/api/transit/matches`
+}
+
+/**
+ * @summary Find verified VTA route and stop candidates using cached reference data
+ */
+export const getTransitMatches = async (params?: GetTransitMatchesParams, options?: Parameters<typeof customFetch>[1]): Promise<TransitMatches> => {
+
+  return customFetch<TransitMatches>(getGetTransitMatchesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTransitMatchesQueryKey = (params?: GetTransitMatchesParams,) => {
+    return [
+    `/api/transit/matches`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetTransitMatchesQueryOptions = <TData = Awaited<ReturnType<typeof getTransitMatches>>, TError = ErrorType<void>>(params?: GetTransitMatchesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransitMatches>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTransitMatchesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransitMatches>>> = ({ signal }) => getTransitMatches(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTransitMatches>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTransitMatchesQueryResult = NonNullable<Awaited<ReturnType<typeof getTransitMatches>>>
+export type GetTransitMatchesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Find verified VTA route and stop candidates using cached reference data
+ */
+
+export function useGetTransitMatches<TData = Awaited<ReturnType<typeof getTransitMatches>>, TError = ErrorType<void>>(
+ params?: GetTransitMatchesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransitMatches>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTransitMatchesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportCategory } from './reportCategory';
 import type { SubmissionLanguage } from './submissionLanguage';
 
 export interface RiderSubmissionInput {
@@ -16,4 +17,14 @@ export interface RiderSubmissionInput {
      * @nullable
      */
   imageName: string | null;
+  issueCategory?: ReportCategory;
+  /** @maxLength 150 */
+  route?: string;
+  /** @maxLength 200 */
+  stop?: string;
+  /** @maxLength 100 */
+  routeId?: string;
+  /** @maxLength 100 */
+  stopId?: string;
+  inputIsSynthetic?: boolean;
 }

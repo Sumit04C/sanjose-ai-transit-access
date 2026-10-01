@@ -231,24 +231,61 @@ export const ListSubmissionsResponseItem = zod.object({
   "imageName": zod.string().nullable(),
   "assistantResponse": zod.string(),
   "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
-  "submittedAt": zod.coerce.date()
+  "submittedAt": zod.coerce.date(),
+  "issueCategory": zod.string(),
+  "route": zod.string(),
+  "stop": zod.string(),
+  "routeId": zod.string().nullable(),
+  "stopId": zod.string().nullable(),
+  "operatorId": zod.string().nullable(),
+  "routeName": zod.string().nullable(),
+  "stopName": zod.string().nullable(),
+  "inputIsSynthetic": zod.boolean(),
+  "inputSource": zod.string(),
+  "dataSourcesUsed": zod.array(zod.string()),
+  "sfBay511DataUsed": zod.boolean(),
+  "vtaOpenDataUsed": zod.boolean(),
+  "liveArrivalSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "serviceAlertSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "vtaOpenDataSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "vtaOpenDataDatasetTitle": zod.string().nullable(),
+  "vtaOpenDataPublisher": zod.string().nullable(),
+  "vtaOpenDataSourceUrl": zod.string().nullable(),
+  "vtaOpenDataResourceUrl": zod.string().nullable(),
+  "sourceRetrievedAt": zod.coerce.date().nullable(),
+  "transitNotes": zod.array(zod.string()),
+  "responseKind": zod.enum(['ai_generated', 'context_only', 'legacy_fixed'])
 })
 export const ListSubmissionsResponse = zod.array(ListSubmissionsResponseItem)
 
 
 /**
- * @summary Save a rider submission and its prototype response
+ * @summary Save a rider submission, grounded response and source snapshots
  */
 export const createSubmissionBodyDescriptionMax = 1000;
 
 export const createSubmissionBodyImageNameMax = 255;
+
+export const createSubmissionBodyRouteMax = 150;
+
+export const createSubmissionBodyStopMax = 200;
+
+export const createSubmissionBodyRouteIdMax = 100;
+
+export const createSubmissionBodyStopIdMax = 100;
 
 
 
 export const CreateSubmissionBody = zod.object({
   "description": zod.string().max(createSubmissionBodyDescriptionMax),
   "language": zod.enum(['vi', 'en', 'es', 'pa']),
-  "imageName": zod.string().max(createSubmissionBodyImageNameMax).nullable()
+  "imageName": zod.string().max(createSubmissionBodyImageNameMax).nullable(),
+  "issueCategory": zod.enum(['delay', 'cleanliness', 'safety', 'accessibility', 'staff', 'vehicle', 'other']).optional(),
+  "route": zod.string().max(createSubmissionBodyRouteMax).optional(),
+  "stop": zod.string().max(createSubmissionBodyStopMax).optional(),
+  "routeId": zod.string().max(createSubmissionBodyRouteIdMax).optional(),
+  "stopId": zod.string().max(createSubmissionBodyStopIdMax).optional(),
+  "inputIsSynthetic": zod.boolean().optional()
 })
 
 export const CreateSubmissionResponse = zod.object({
@@ -259,7 +296,57 @@ export const CreateSubmissionResponse = zod.object({
   "imageName": zod.string().nullable(),
   "assistantResponse": zod.string(),
   "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
-  "submittedAt": zod.coerce.date()
+  "submittedAt": zod.coerce.date(),
+  "issueCategory": zod.string(),
+  "route": zod.string(),
+  "stop": zod.string(),
+  "routeId": zod.string().nullable(),
+  "stopId": zod.string().nullable(),
+  "operatorId": zod.string().nullable(),
+  "routeName": zod.string().nullable(),
+  "stopName": zod.string().nullable(),
+  "inputIsSynthetic": zod.boolean(),
+  "inputSource": zod.string(),
+  "dataSourcesUsed": zod.array(zod.string()),
+  "sfBay511DataUsed": zod.boolean(),
+  "vtaOpenDataUsed": zod.boolean(),
+  "liveArrivalSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "serviceAlertSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "vtaOpenDataSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "vtaOpenDataDatasetTitle": zod.string().nullable(),
+  "vtaOpenDataPublisher": zod.string().nullable(),
+  "vtaOpenDataSourceUrl": zod.string().nullable(),
+  "vtaOpenDataResourceUrl": zod.string().nullable(),
+  "sourceRetrievedAt": zod.coerce.date().nullable(),
+  "transitNotes": zod.array(zod.string()),
+  "responseKind": zod.enum(['ai_generated', 'context_only', 'legacy_fixed'])
+})
+
+
+/**
+ * @summary Find verified VTA route and stop candidates using cached reference data
+ */
+export const getTransitMatchesQueryRouteMax = 150;
+
+export const getTransitMatchesQueryStopMax = 200;
+
+
+
+export const GetTransitMatchesQueryParams = zod.object({
+  "route": zod.coerce.string().max(getTransitMatchesQueryRouteMax).optional(),
+  "stop": zod.coerce.string().max(getTransitMatchesQueryStopMax).optional()
+})
+
+export const GetTransitMatchesResponse = zod.object({
+  "routes": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+})),
+  "stops": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+})),
+  "message": zod.string()
 })
 
 

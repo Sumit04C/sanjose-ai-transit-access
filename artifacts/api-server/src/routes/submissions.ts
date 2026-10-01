@@ -7,7 +7,8 @@ import {
 } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { submissionsTable, type Submission, type submissionLanguages } from "@workspace/db/schema";
-import { prototypeResponses } from "../lib/prototype-response";
+import { lookupTransit } from "../lib/transit-provider";
+import { generateGroundedResponse } from "../lib/grounded-response";
 
 const router: IRouter = Router();
 
@@ -15,6 +16,7 @@ const toSubmission = (submission: Submission) => ({
   ...submission,
   language: submission.language as (typeof submissionLanguages)[number],
   submittedAt: submission.submittedAt.toISOString(),
+  sourceRetrievedAt: submission.sourceRetrievedAt?.toISOString() ?? null,
 });
 
 router.get("/submissions", async (req, res): Promise<void> => {
@@ -45,6 +47,18 @@ router.post("/submissions", async (req, res): Promise<void> => {
   }
 
   try {
+    const inputIsSynthetic = parsed.data.inputIsSynthetic === true || description.includes("[242]");
+    const route = parsed.data.route?.trim() ?? "";
+    const stop = parsed.data.stop?.trim() ?? "";
+    const issueCategory = parsed.data.issueCategory ?? "other";
+    const context = await lookupTransit({
+      route, stop,
+      routeId: parsed.data.routeId?.trim(),
+      stopId: parsed.data.stopId?.trim(),
+    });
+    const response = await generateGroundedResponse({
+      description, language, imageName, issueCategory, inputIsSynthetic, context,
+    });
     const id = crypto.randomUUID();
     const [saved] = await db
       .insert(submissionsTable)
@@ -54,8 +68,28 @@ router.post("/submissions", async (req, res): Promise<void> => {
         description,
         language,
         imageName,
-        assistantResponse: prototypeResponses[language],
-        dataSource: "real document",
+        ...response,
+        // Legacy label is retained for old clients, not used as transit provenance.
+        dataSource: inputIsSynthetic ? "synthetic data" : "real document",
+        issueCategory, route, stop, inputIsSynthetic,
+        inputSource: inputIsSynthetic ? "synthetic classroom test" : "rider-submitted input",
+        operatorId: context.operatorId,
+        routeId: context.routeId,
+        stopId: context.stopId,
+        routeName: context.routeName,
+        stopName: context.stopName,
+        dataSourcesUsed: context.dataSourcesUsed,
+        sfBay511DataUsed: context.sfBay511DataUsed,
+        vtaOpenDataUsed: context.vtaOpenDataUsed,
+        liveArrivalSnapshot: context.liveArrivalSnapshot,
+        serviceAlertSnapshot: context.serviceAlertSnapshot,
+        vtaOpenDataSnapshot: context.vtaOpenDataSnapshot,
+        vtaOpenDataDatasetTitle: context.vtaOpenDataDatasetTitle,
+        vtaOpenDataPublisher: context.vtaOpenDataUsed ? "Santa Clara Valley Transportation Authority" : null,
+        vtaOpenDataSourceUrl: context.vtaOpenDataSourceUrl,
+        vtaOpenDataResourceUrl: context.vtaOpenDataResourceUrl,
+        sourceRetrievedAt: context.sourceRetrievedAt ? new Date(context.sourceRetrievedAt) : null,
+        transitNotes: context.notes,
       })
       .returning();
 

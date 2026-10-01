@@ -5,6 +5,22 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface TransitCandidate {
+  id: string;
+  name: string;
+}
+
+export interface TransitMatches {
+  routes: TransitCandidate[];
+  stops: TransitCandidate[];
+  message: string;
+}
+
+/**
+ * @nullable
+ */
+export type TransitSnapshot = { [key: string]: unknown } | null;
+
 export type SubmissionLanguage = typeof SubmissionLanguage[keyof typeof SubmissionLanguage];
 
 
@@ -24,6 +40,19 @@ export const SubmissionDataSource = {
   synthetic_data: 'synthetic data',
 } as const;
 
+export type ReportCategory = typeof ReportCategory[keyof typeof ReportCategory];
+
+
+export const ReportCategory = {
+  delay: 'delay',
+  cleanliness: 'cleanliness',
+  safety: 'safety',
+  accessibility: 'accessibility',
+  staff: 'staff',
+  vehicle: 'vehicle',
+  other: 'other',
+} as const;
+
 export interface RiderSubmissionInput {
   /** @maxLength 1000 */
   description: string;
@@ -33,7 +62,26 @@ export interface RiderSubmissionInput {
      * @nullable
      */
   imageName: string | null;
+  issueCategory?: ReportCategory;
+  /** @maxLength 150 */
+  route?: string;
+  /** @maxLength 200 */
+  stop?: string;
+  /** @maxLength 100 */
+  routeId?: string;
+  /** @maxLength 100 */
+  stopId?: string;
+  inputIsSynthetic?: boolean;
 }
+
+export type RiderSubmissionResponseKind = typeof RiderSubmissionResponseKind[keyof typeof RiderSubmissionResponseKind];
+
+
+export const RiderSubmissionResponseKind = {
+  ai_generated: 'ai_generated',
+  context_only: 'context_only',
+  legacy_fixed: 'legacy_fixed',
+} as const;
 
 export interface RiderSubmission {
   id: string;
@@ -45,6 +93,39 @@ export interface RiderSubmission {
   assistantResponse: string;
   dataSource: SubmissionDataSource;
   submittedAt: string;
+  issueCategory: string;
+  route: string;
+  stop: string;
+  /** @nullable */
+  routeId: string | null;
+  /** @nullable */
+  stopId: string | null;
+  /** @nullable */
+  operatorId: string | null;
+  /** @nullable */
+  routeName: string | null;
+  /** @nullable */
+  stopName: string | null;
+  inputIsSynthetic: boolean;
+  inputSource: string;
+  dataSourcesUsed: string[];
+  sfBay511DataUsed: boolean;
+  vtaOpenDataUsed: boolean;
+  liveArrivalSnapshot: TransitSnapshot | null;
+  serviceAlertSnapshot: TransitSnapshot | null;
+  vtaOpenDataSnapshot: TransitSnapshot | null;
+  /** @nullable */
+  vtaOpenDataDatasetTitle: string | null;
+  /** @nullable */
+  vtaOpenDataPublisher: string | null;
+  /** @nullable */
+  vtaOpenDataSourceUrl: string | null;
+  /** @nullable */
+  vtaOpenDataResourceUrl: string | null;
+  /** @nullable */
+  sourceRetrievedAt: string | null;
+  transitNotes: string[];
+  responseKind: RiderSubmissionResponseKind;
 }
 
 export interface HealthStatus {
@@ -68,19 +149,6 @@ export const ReportStatus = {
   reviewing: 'reviewing',
   assigned: 'assigned',
   resolved: 'resolved',
-} as const;
-
-export type ReportCategory = typeof ReportCategory[keyof typeof ReportCategory];
-
-
-export const ReportCategory = {
-  delay: 'delay',
-  cleanliness: 'cleanliness',
-  safety: 'safety',
-  accessibility: 'accessibility',
-  staff: 'staff',
-  vehicle: 'vehicle',
-  other: 'other',
 } as const;
 
 export type ReportAttachmentKind = typeof ReportAttachmentKind[keyof typeof ReportAttachmentKind];
@@ -171,4 +239,15 @@ export const ListReportsStatus = {
   assigned: 'assigned',
   resolved: 'resolved',
 } as const;
+
+export type GetTransitMatchesParams = {
+/**
+ * @maxLength 150
+ */
+route?: string;
+/**
+ * @maxLength 200
+ */
+stop?: string;
+};
 

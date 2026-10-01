@@ -201,7 +201,7 @@ paths:
     post:
       operationId: createSubmission
       tags: [submissions]
-      summary: Save a rider submission and its prototype response
+      summary: Save a rider submission, grounded response and source snapshots
       requestBody:
         required: true
         content:
@@ -215,8 +215,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RiderSubmission"
+  /transit/matches:
+    get:
+      operationId: getTransitMatches
+      tags: [submissions]
+      summary: Find verified VTA route and stop candidates using cached reference data
+      parameters:
+        - name: route
+          in: query
+          schema: { type: string, maxLength: 150 }
+        - name: stop
+          in: query
+          schema: { type: string, maxLength: 200 }
+      responses:
+        "200":
+          description: Candidate matches, without guessing an ambiguous stop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransitMatches"
+        "400":
+          description: Invalid search
 components:
   schemas:
+    TransitCandidate:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+      required: [id, name]
+    TransitMatches:
+      type: object
+      properties:
+        routes:
+          type: array
+          items: { $ref: "#/components/schemas/TransitCandidate" }
+        stops:
+          type: array
+          items: { $ref: "#/components/schemas/TransitCandidate" }
+        message: { type: string }
+      required: [routes, stops, message]
+    TransitSnapshot:
+      type: ["object", "null"]
+      additionalProperties: true
     SubmissionLanguage:
       type: string
       enum: [vi, en, es, pa]
@@ -234,6 +275,13 @@ components:
         imageName:
           type: ["string", "null"]
           maxLength: 255
+        issueCategory:
+          $ref: "#/components/schemas/ReportCategory"
+        route: { type: string, maxLength: 150 }
+        stop: { type: string, maxLength: 200 }
+        routeId: { type: string, maxLength: 100 }
+        stopId: { type: string, maxLength: 100 }
+        inputIsSynthetic: { type: boolean }
       required: [description, language, imageName]
     RiderSubmission:
       type: object
@@ -255,7 +303,36 @@ components:
         submittedAt:
           type: string
           format: date-time
-      required: [id, reference, description, language, imageName, assistantResponse, dataSource, submittedAt]
+        issueCategory: { type: string }
+        route: { type: string }
+        stop: { type: string }
+        routeId: { type: ["string", "null"] }
+        stopId: { type: ["string", "null"] }
+        operatorId: { type: ["string", "null"] }
+        routeName: { type: ["string", "null"] }
+        stopName: { type: ["string", "null"] }
+        inputIsSynthetic: { type: boolean }
+        inputSource: { type: string }
+        dataSourcesUsed:
+          type: array
+          items: { type: string }
+        sfBay511DataUsed: { type: boolean }
+        vtaOpenDataUsed: { type: boolean }
+        liveArrivalSnapshot: { $ref: "#/components/schemas/TransitSnapshot" }
+        serviceAlertSnapshot: { $ref: "#/components/schemas/TransitSnapshot" }
+        vtaOpenDataSnapshot: { $ref: "#/components/schemas/TransitSnapshot" }
+        vtaOpenDataDatasetTitle: { type: ["string", "null"] }
+        vtaOpenDataPublisher: { type: ["string", "null"] }
+        vtaOpenDataSourceUrl: { type: ["string", "null"] }
+        vtaOpenDataResourceUrl: { type: ["string", "null"] }
+        sourceRetrievedAt: { type: ["string", "null"], format: date-time }
+        transitNotes:
+          type: array
+          items: { type: string }
+        responseKind:
+          type: string
+          enum: [ai_generated, context_only, legacy_fixed]
+      required: [id, reference, description, language, imageName, assistantResponse, dataSource, submittedAt, issueCategory, route, stop, routeId, stopId, operatorId, routeName, stopName, inputIsSynthetic, inputSource, dataSourcesUsed, sfBay511DataUsed, vtaOpenDataUsed, liveArrivalSnapshot, serviceAlertSnapshot, vtaOpenDataSnapshot, vtaOpenDataDatasetTitle, vtaOpenDataPublisher, vtaOpenDataSourceUrl, vtaOpenDataResourceUrl, sourceRetrievedAt, transitNotes, responseKind]
     HealthStatus:
       type: object
       properties:

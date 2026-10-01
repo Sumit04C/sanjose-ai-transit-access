@@ -5,8 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { RiderSubmissionResponseKind } from './riderSubmissionResponseKind';
 import type { SubmissionDataSource } from './submissionDataSource';
 import type { SubmissionLanguage } from './submissionLanguage';
+import type { TransitSnapshot } from './transitSnapshot';
 
 export interface RiderSubmission {
   id: string;
@@ -18,4 +20,37 @@ export interface RiderSubmission {
   assistantResponse: string;
   dataSource: SubmissionDataSource;
   submittedAt: Date;
+  issueCategory: string;
+  route: string;
+  stop: string;
+  /** @nullable */
+  routeId: string | null;
+  /** @nullable */
+  stopId: string | null;
+  /** @nullable */
+  operatorId: string | null;
+  /** @nullable */
+  routeName: string | null;
+  /** @nullable */
+  stopName: string | null;
+  inputIsSynthetic: boolean;
+  inputSource: string;
+  dataSourcesUsed: string[];
+  sfBay511DataUsed: boolean;
+  vtaOpenDataUsed: boolean;
+  liveArrivalSnapshot: TransitSnapshot | null;
+  serviceAlertSnapshot: TransitSnapshot | null;
+  vtaOpenDataSnapshot: TransitSnapshot | null;
+  /** @nullable */
+  vtaOpenDataDatasetTitle: string | null;
+  /** @nullable */
+  vtaOpenDataPublisher: string | null;
+  /** @nullable */
+  vtaOpenDataSourceUrl: string | null;
+  /** @nullable */
+  vtaOpenDataResourceUrl: string | null;
+  /** @nullable */
+  sourceRetrievedAt: Date | null;
+  transitNotes: string[];
+  responseKind: RiderSubmissionResponseKind;
 }
