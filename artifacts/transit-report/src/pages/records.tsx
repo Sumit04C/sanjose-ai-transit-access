@@ -96,7 +96,7 @@ const inputLanguages: Record<Language, string> = {
 function SubmissionCard({ submission, language }: { submission: RiderSubmission; language: Language }) {
   const t = content[language];
   return (
-    <article className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-[0_10px_24px_hsl(216_61%_20%/.05)] sm:p-7" data-testid={`card-submission-${submission.id}`}>
+    <article className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-[0_10px_24px_hsl(216_61%_20%/.05)] sm:rounded-[24px] sm:p-7" data-testid={`card-submission-${submission.id}`}>
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[hsl(var(--border))] pb-4">
         <div>
           <p className="font-mono text-sm font-bold text-[hsl(var(--primary))]" data-testid={`text-reference-${submission.id}`}>{submission.reference}</p>

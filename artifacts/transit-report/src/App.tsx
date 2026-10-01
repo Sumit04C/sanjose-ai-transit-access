@@ -293,7 +293,7 @@ function Header({ language, onLanguageChange }: { language: Language; onLanguage
   const [location] = useLocation();
   return (
     <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card)/.92)]">
-      <div className="mx-auto flex min-h-[76px] max-w-4xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
+      <div className="mx-auto flex min-h-[68px] max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:min-h-[76px] sm:flex-nowrap sm:gap-4 sm:px-8 sm:py-4">
         <div className="flex items-center gap-3" data-testid="brand-vta">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-[4px_4px_0_hsl(var(--accent))]">
             <BusFront size={24} strokeWidth={2.4} />
@@ -310,7 +310,7 @@ function Header({ language, onLanguageChange }: { language: Language; onLanguage
               key={option}
               type="button"
               onClick={() => onLanguageChange(option)}
-              className="focus-ring inline-flex min-h-10 items-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 text-[11px] font-bold text-[hsl(var(--primary))] transition-colors hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))] sm:px-3.5 sm:text-xs"
+              className="focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2.5 text-[10px] font-bold text-[hsl(var(--primary))] transition-colors hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))] sm:px-3.5 sm:text-xs"
               aria-label={`Switch language to ${languageNames[option]}`}
               data-testid={`button-language-${option}`}
             >
@@ -319,9 +319,9 @@ function Header({ language, onLanguageChange }: { language: Language; onLanguage
           ))}
         </nav>
       </div>
-      <nav className="mx-auto flex max-w-4xl gap-2 px-5 pb-3 sm:px-8" aria-label={t.pagesLabel}>
-        <Link href="/" aria-current={location === '/' ? 'page' : undefined} className={`focus-ring rounded-full px-4 py-2 text-xs font-bold transition-colors ${location === '/' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-report-page">{t.reportNav}</Link>
-        <Link href="/records" aria-current={location === '/records' ? 'page' : undefined} className={`focus-ring rounded-full px-4 py-2 text-xs font-bold transition-colors ${location === '/records' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-records-page">{t.recordsNav}</Link>
+      <nav className="mx-auto flex max-w-4xl gap-1.5 overflow-x-auto px-4 pb-3 sm:gap-2 sm:px-8" aria-label={t.pagesLabel}>
+        <Link href="/" aria-current={location === '/' ? 'page' : undefined} className={`focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-2.5 text-xs font-bold transition-colors sm:px-4 ${location === '/' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-report-page">{t.reportNav}</Link>
+        <Link href="/records" aria-current={location === '/records' ? 'page' : undefined} className={`focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-2.5 text-xs font-bold transition-colors sm:px-4 ${location === '/records' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-records-page">{t.recordsNav}</Link>
       </nav>
     </header>
   );
@@ -480,8 +480,8 @@ function ReportForm({
 
   return (
     <form onSubmit={submit} className="space-y-6" noValidate>
-      <section className="rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:p-8">
-        <div className="mb-7 flex items-start gap-4">
+      <section className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:rounded-[26px] sm:p-8">
+        <div className="mb-5 flex items-start gap-3 sm:mb-7 sm:gap-4">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
             <Volume2 size={20} />
           </span>
@@ -496,7 +496,7 @@ function ReportForm({
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value.slice(0, 1000))}
-            className="focus-ring min-h-[180px] w-full resize-y rounded-2xl border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-4 py-4 pb-16 text-base leading-7 text-[hsl(var(--foreground))] outline-none transition-colors placeholder:text-[hsl(var(--muted-foreground)/.8)] focus:border-[hsl(var(--primary))]"
+            className="focus-ring min-h-[160px] w-full resize-y rounded-2xl border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-4 py-4 pb-16 text-base leading-7 text-[hsl(var(--foreground))] outline-none transition-colors placeholder:text-[hsl(var(--muted-foreground)/.8)] focus:border-[hsl(var(--primary))] sm:min-h-[180px]"
             placeholder={t.placeholder}
             aria-label={t.describeLabel}
             data-testid="textarea-description"
@@ -528,8 +528,8 @@ function ReportForm({
         {voiceMessage && <p className="mt-3 text-sm leading-6 text-[hsl(var(--destructive))]" role="alert" data-testid="status-voice-message">{voiceMessage}</p>}
       </section>
 
-      <section className="rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:p-8">
-        <div className="mb-6 flex items-start gap-4">
+      <section className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:rounded-[26px] sm:p-8">
+        <div className="mb-5 flex items-start gap-3 sm:mb-6 sm:gap-4">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
             <ImagePlus size={20} />
           </span>
@@ -541,7 +541,7 @@ function ReportForm({
         {image ? (
           <AttachmentPreview image={image} language={language} onRemove={() => setImage(null)} />
         ) : (
-          <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[hsl(var(--input))] bg-[hsl(var(--secondary)/.5)] px-5 py-9 text-center transition-colors hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]">
+          <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[hsl(var(--input))] bg-[hsl(var(--secondary)/.5)] px-4 py-7 text-center transition-colors hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))] sm:px-5 sm:py-9">
             <span className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[hsl(var(--card))] text-[hsl(var(--primary))]">
               <Paperclip size={22} />
             </span>
@@ -602,7 +602,7 @@ function SubmittedReport({
 
   return (
     <div className="space-y-6" data-testid="screen-submitted">
-      <section className="overflow-hidden rounded-[28px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-[0_14px_32px_hsl(216_61%_20%/.07)]">
+      <section className="overflow-hidden rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-[0_14px_32px_hsl(216_61%_20%/.07)] sm:rounded-[28px]">
         <div className="bg-[hsl(var(--primary))] px-5 py-8 text-[hsl(var(--primary-foreground))] sm:px-9 sm:py-10">
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-[hsl(var(--accent))] text-[hsl(var(--primary))] shadow-[4px_4px_0_hsl(var(--primary-foreground)/.18)]">
             <Check size={30} strokeWidth={3} />
@@ -612,8 +612,8 @@ function SubmittedReport({
           <p className="mt-4 max-w-2xl text-base leading-7 text-[hsl(var(--primary-foreground)/.8)]">{t.successBody}</p>
         </div>
 
-        <div className="space-y-6 p-5 sm:p-9">
-          <div className="rounded-2xl border border-[hsl(var(--accent)/.65)] bg-[hsl(var(--accent)/.16)] p-5">
+        <div className="space-y-6 p-4 sm:p-9">
+          <div className="rounded-2xl border border-[hsl(var(--accent)/.65)] bg-[hsl(var(--accent)/.16)] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-[hsl(var(--primary))]">{t.responseHeading}</p>
@@ -684,11 +684,11 @@ function TransitApp() {
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
       <Header language={language} onLanguageChange={setLanguage} />
-      <main className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
+      <main className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-4xl px-4 py-6 sm:px-8 sm:py-12">
         <Switch>
         <Route path="/">
         <div className="mx-auto max-w-2xl">
-          <div className="mb-8 flex items-center justify-between gap-4">
+          <div className="mb-7 flex items-center justify-between gap-3 sm:mb-8 sm:gap-4">
             <span className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-[hsl(var(--primary))]" data-testid="text-step">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--accent))]" />
               {submitted ? t.stepTwo : t.stepOne}
@@ -701,7 +701,7 @@ function TransitApp() {
 
           {!submitted ? (
             <>
-              <div className="mb-9">
+              <div className="mb-7 sm:mb-9">
                 <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[.16em] text-[hsl(var(--primary))]">{t.eyebrow}</p>
                 <h1 className="max-w-2xl text-4xl font-bold leading-[.98] tracking-[-.065em] sm:text-6xl" data-testid="text-page-title">{t.title}</h1>
                 <p className="mt-5 max-w-xl text-base leading-7 text-[hsl(var(--muted-foreground))]">{t.instruction}</p>
