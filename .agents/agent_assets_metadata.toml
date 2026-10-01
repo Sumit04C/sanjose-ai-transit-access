@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "yVmRJu8MBf5oLX-Bba701"
+uri = "file://artifacts/transit-report/public/transit-report-qr.png"
+type = "image"
+title = "Transit Report QR code"
+description = "Scan to open the published Transit Report app. The current deployment is password-protected."
+logical_id = "ece1dc1d-0a6d-4e26-a897-d3b44691f3be"
+content_hash = "sha256:7d45a06652f625d5ae69552717fc795ab7e4103f8098cf65a255c6f52eeae4ee"
+size = 540
+mtime_ms = 1790893784403
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:da2baa1f-2851-4e12-a7e9-36a0f42deb78/ece1dc1d-0a6d-4e26-a897-d3b44691f3be/de6865bb-598e-42ae-a4d6-746365c1fe57"
+storage_version_token = "1790893847701041"
+content_type = "image/png"
