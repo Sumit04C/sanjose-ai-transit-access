@@ -16,6 +16,8 @@ tags:
     description: Department review dashboard
   - name: submissions
     description: Rider issue submissions and stored prototype responses
+  - name: access
+    description: Shared passcode access for the class-project app
 paths:
   /healthz:
     get:
@@ -30,6 +32,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /access/status:
+    get:
+      operationId: getAccessStatus
+      tags: [access]
+      summary: Check whether this browser has unlocked the app
+      responses:
+        "200":
+          description: Access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessStatus"
+        "503":
+          description: App access code is not configured
+  /access/unlock:
+    post:
+      operationId: unlockAccess
+      tags: [access]
+      summary: Unlock the app with its shared four-digit code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessCodeInput"
+      responses:
+        "200":
+          description: App unlocked for this browser
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessStatus"
+        "400":
+          description: Invalid code format
+        "401":
+          description: Incorrect code
+        "429":
+          description: Too many incorrect attempts
+        "503":
+          description: App access code is not configured
   /reports:
     get:
       operationId: listReports
@@ -221,6 +263,19 @@ components:
           type: string
       required:
         - status
+    AccessCodeInput:
+      type: object
+      properties:
+        passcode:
+          type: string
+          pattern: "^[0-9]{4}$"
+      required: [passcode]
+    AccessStatus:
+      type: object
+      properties:
+        unlocked:
+          type: boolean
+      required: [unlocked]
     ReportStatus:
       type: string
       enum: [submitted, reviewing, assigned, resolved]

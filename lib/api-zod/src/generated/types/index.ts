@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './accessCodeInput';
+export * from './accessStatus';
 export * from './healthStatus';
 export * from './listReportsParams';
 export * from './listReportsStatus';

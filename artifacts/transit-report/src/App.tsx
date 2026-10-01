@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
-import { getListSubmissionsQueryKey, useCreateSubmission } from '@workspace/api-client-react';
+import { getGetAccessStatusQueryKey, getListSubmissionsQueryKey, useCreateSubmission, useGetAccessStatus, useUnlockAccess } from '@workspace/api-client-react';
 import type { RiderSubmission } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 import RecordsPage from '@/pages/records';
@@ -291,6 +291,163 @@ const copy = {
     footer: 'VTA ਆਵਾਜਾਈ ਸਹਾਇਤਾ · ਸੈਨ ਹੋਜ਼ੇ',
   },
 } as const;
+
+const accessCopy: Record<Language, {
+  title: string;
+  description: string;
+  label: string;
+  submit: string;
+  checking: string;
+  error: string;
+  unavailable: string;
+  retry: string;
+}> = {
+  vi: {
+    title: 'Nhập mã truy cập',
+    description: 'Nhập mã gồm bốn chữ số để tiếp tục đến báo cáo giao thông.',
+    label: 'Mã truy cập gồm bốn chữ số',
+    submit: 'Mở ứng dụng',
+    checking: 'Đang kiểm tra quyền truy cập…',
+    error: 'Mã không đúng hoặc đã vượt quá số lần thử. Vui lòng thử lại sau.',
+    unavailable: 'Chưa thể kiểm tra mã truy cập. Hãy thử lại hoặc liên hệ người quản lý dự án.',
+    retry: 'Thử lại',
+  },
+  en: {
+    title: 'Enter the access code',
+    description: 'Enter the four-digit code to continue to the transit report app.',
+    label: 'Four-digit access code',
+    submit: 'Unlock app',
+    checking: 'Checking access…',
+    error: 'The code was not accepted or attempts are temporarily limited. Try again later.',
+    unavailable: 'Access verification is unavailable. Try again or contact the project owner.',
+    retry: 'Try again',
+  },
+  es: {
+    title: 'Ingresa el código de acceso',
+    description: 'Ingresa el código de cuatro dígitos para continuar a la aplicación de reportes.',
+    label: 'Código de acceso de cuatro dígitos',
+    submit: 'Desbloquear',
+    checking: 'Verificando acceso…',
+    error: 'No se aceptó el código o los intentos están limitados temporalmente. Inténtalo más tarde.',
+    unavailable: 'La verificación de acceso no está disponible. Inténtalo de nuevo o contacta a quien administra el proyecto.',
+    retry: 'Intentar de nuevo',
+  },
+  pa: {
+    title: 'ਐਕਸੈੱਸ ਕੋਡ ਦਾਖ਼ਲ ਕਰੋ',
+    description: 'ਟ੍ਰਾਂਜ਼ਿਟ ਰਿਪੋਰਟ ਐਪ ਵਿੱਚ ਜਾਣ ਲਈ ਚਾਰ ਅੰਕਾਂ ਵਾਲਾ ਕੋਡ ਦਾਖ਼ਲ ਕਰੋ।',
+    label: 'ਚਾਰ ਅੰਕਾਂ ਵਾਲਾ ਐਕਸੈੱਸ ਕੋਡ',
+    submit: 'ਐਪ ਖੋਲ੍ਹੋ',
+    checking: 'ਐਕਸੈੱਸ ਦੀ ਜਾਂਚ ਹੋ ਰਹੀ ਹੈ…',
+    error: 'ਕੋਡ ਸਵੀਕਾਰ ਨਹੀਂ ਹੋਇਆ ਜਾਂ ਕੋਸ਼ਿਸ਼ਾਂ ਅਸਥਾਈ ਤੌਰ ਤੇ ਸੀਮਿਤ ਹਨ। ਬਾਅਦ ਵਿੱਚ ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
+    unavailable: 'ਐਕਸੈੱਸ ਦੀ ਜਾਂਚ ਉਪਲਬਧ ਨਹੀਂ ਹੈ। ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਪ੍ਰੋਜੈਕਟ ਮਾਲਕ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।',
+    retry: 'ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ',
+  },
+};
+
+function AccessGate({
+  language,
+  unavailable = false,
+  onUnlocked,
+  onRetry,
+}: {
+  language: Language;
+  unavailable?: boolean;
+  onUnlocked: () => void;
+  onRetry: () => void;
+}) {
+  const t = accessCopy[language];
+  const unlock = useUnlockAccess();
+  const [passcode, setPasscode] = useState('');
+  const [hasError, setHasError] = useState(false);
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!/^[0-9]{4}$/.test(passcode)) {
+      setHasError(true);
+      return;
+    }
+
+    setHasError(false);
+    unlock.mutate(
+      { data: { passcode } },
+      {
+        onSuccess: () => {
+          setPasscode('');
+          onUnlocked();
+        },
+        onError: () => {
+          setPasscode('');
+          setHasError(true);
+        },
+      },
+    );
+  };
+
+  if (unavailable) {
+    return (
+      <section className="mx-auto max-w-md rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:p-8" role="status" data-testid="access-unavailable">
+        <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
+          <AlertCircle size={23} />
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+        <p className="mt-3 text-sm leading-6 text-[hsl(var(--muted-foreground))]">{t.unavailable}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="focus-ring mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] hover:opacity-90"
+        >
+          <Loader2 size={17} />
+          {t.retry}
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mx-auto max-w-md rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:p-8" data-testid="access-gate">
+      <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
+        <ShieldCheck size={23} />
+      </div>
+      <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+      <p className="mt-3 text-sm leading-6 text-[hsl(var(--muted-foreground))]">{t.description}</p>
+      <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
+        <label htmlFor="app-access-code" className="block text-sm font-semibold">
+          {t.label}
+        </label>
+        <input
+          id="app-access-code"
+          type="password"
+          inputMode="numeric"
+          pattern="[0-9]{4}"
+          autoComplete="one-time-code"
+          maxLength={4}
+          value={passcode}
+          onChange={(event) => {
+            setPasscode(event.target.value.replace(/[^0-9]/g, '').slice(0, 4));
+            setHasError(false);
+          }}
+          className="focus-ring min-h-14 w-full rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 text-center font-mono text-2xl tracking-[.45em]"
+          aria-invalid={hasError}
+          aria-describedby={hasError ? 'app-access-error' : undefined}
+          disabled={unlock.isPending}
+        />
+        {hasError && (
+          <p id="app-access-error" className="text-sm font-medium text-[hsl(var(--destructive))]" role="alert">
+            {t.error}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={unlock.isPending || passcode.length !== 4}
+          className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {unlock.isPending ? <Loader2 size={17} className="animate-spin" /> : <ShieldCheck size={17} />}
+          {t.submit}
+        </button>
+      </form>
+    </section>
+  );
+}
 
 function Header({ language, onLanguageChange }: { language: Language; onLanguageChange: (language: Language) => void }) {
   const t = copy[language];
@@ -677,8 +834,13 @@ function SubmittedReport({
 function TransitApp() {
   const [language, setLanguage] = useState<Language>('vi');
   const [submitted, setSubmitted] = useState<{ report: RiderSubmission; image: ImageAttachment | null } | null>(null);
+  const [locallyUnlocked, setLocallyUnlocked] = useState(false);
+  const accessStatus = useGetAccessStatus({
+    query: { queryKey: getGetAccessStatusQueryKey(), retry: false },
+  });
   const t = copy[language];
   const [location] = useLocation();
+  const hasAccess = locallyUnlocked || accessStatus.data?.unlocked === true;
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -698,37 +860,50 @@ function TransitApp() {
         </p>
       </div>
       <main className="civic-grid mx-auto min-h-[calc(100dvh-76px)] max-w-4xl px-4 py-6 sm:px-8 sm:py-12">
-        <Switch>
-        <Route path="/">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-7 flex items-center justify-between gap-3 sm:mb-8 sm:gap-4">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-[hsl(var(--primary))]" data-testid="text-step">
-              <span className="h-2 w-2 rounded-full bg-[hsl(var(--accent))]" />
-              {submitted ? t.stepTwo : t.stepOne}
-            </span>
-            <span className="hidden items-center gap-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))] sm:flex">
-              <ShieldCheck size={15} className="text-[hsl(var(--primary))]" />
-              {t.privacy}
-            </span>
-          </div>
+        {accessStatus.isLoading && !hasAccess ? (
+          <p className="mx-auto max-w-md py-12 text-center text-sm text-[hsl(var(--muted-foreground))]" role="status">
+            {accessCopy[language].checking}
+          </p>
+        ) : !hasAccess ? (
+          <AccessGate
+            language={language}
+            unavailable={accessStatus.isError}
+            onUnlocked={() => setLocallyUnlocked(true)}
+            onRetry={() => { void accessStatus.refetch(); }}
+          />
+        ) : (
+          <Switch>
+            <Route path="/">
+              <div className="mx-auto max-w-2xl">
+                <div className="mb-7 flex items-center justify-between gap-3 sm:mb-8 sm:gap-4">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-[hsl(var(--primary))]" data-testid="text-step">
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--accent))]" />
+                    {submitted ? t.stepTwo : t.stepOne}
+                  </span>
+                  <span className="hidden items-center gap-1.5 text-xs font-medium text-[hsl(var(--muted-foreground))] sm:flex">
+                    <ShieldCheck size={15} className="text-[hsl(var(--primary))]" />
+                    {t.privacy}
+                  </span>
+                </div>
 
-          {!submitted ? (
-            <>
-              <div className="mb-7 sm:mb-9">
-                <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[.16em] text-[hsl(var(--primary))]">{t.eyebrow}</p>
-                <h1 className="max-w-2xl text-4xl font-bold leading-[.98] tracking-[-.065em] sm:text-6xl" data-testid="text-page-title">{t.title}</h1>
-                <p className="mt-5 max-w-xl text-base leading-7 text-[hsl(var(--muted-foreground))]">{t.instruction}</p>
+                {!submitted ? (
+                  <>
+                    <div className="mb-7 sm:mb-9">
+                      <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[.16em] text-[hsl(var(--primary))]">{t.eyebrow}</p>
+                      <h1 className="max-w-2xl text-4xl font-bold leading-[.98] tracking-[-.065em] sm:text-6xl" data-testid="text-page-title">{t.title}</h1>
+                      <p className="mt-5 max-w-xl text-base leading-7 text-[hsl(var(--muted-foreground))]">{t.instruction}</p>
+                    </div>
+                    <ReportForm language={language} onSubmitted={(report, image) => setSubmitted({ report, image })} />
+                  </>
+                ) : (
+                  <SubmittedReport language={language} report={submitted.report} image={submitted.image} onNewReport={() => setSubmitted(null)} />
+                )}
               </div>
-              <ReportForm language={language} onSubmitted={(report, image) => setSubmitted({ report, image })} />
-            </>
-          ) : (
-            <SubmittedReport language={language} report={submitted.report} image={submitted.image} onNewReport={() => setSubmitted(null)} />
-          )}
-        </div>
-        </Route>
-        <Route path="/records"><RecordsPage language={language} /></Route>
-        <Route component={NotFound} />
-        </Switch>
+            </Route>
+            <Route path="/records"><RecordsPage language={language} /></Route>
+            <Route component={NotFound} />
+          </Switch>
+        )}
       </main>
       <footer className="border-t border-[hsl(var(--border))] px-5 py-6 text-center text-xs text-[hsl(var(--muted-foreground))]">
         {t.footer}

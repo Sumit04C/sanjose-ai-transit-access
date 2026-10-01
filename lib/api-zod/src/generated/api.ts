@@ -18,6 +18,29 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Check whether this browser has unlocked the app
+ */
+export const GetAccessStatusResponse = zod.object({
+  "unlocked": zod.boolean()
+})
+
+
+/**
+ * @summary Unlock the app with its shared four-digit code
+ */
+export const unlockAccessBodyPasscodeRegExp = new RegExp('^[0-9]{4}$');
+
+
+export const UnlockAccessBody = zod.object({
+  "passcode": zod.string().regex(unlockAccessBodyPasscodeRegExp)
+})
+
+export const UnlockAccessResponse = zod.object({
+  "unlocked": zod.boolean()
+})
+
+
+/**
  * @summary List transit issue reports
  */
 export const ListReportsQueryParams = zod.object({

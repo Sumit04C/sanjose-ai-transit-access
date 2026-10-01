@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccessCodeInput,
+  AccessStatus,
   HealthStatus,
   ListReportsParams,
   ReportActivity,
@@ -135,6 +137,171 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+export const getGetAccessStatusUrl = () => {
+
+
+
+
+  return `/api/access/status`
+}
+
+/**
+ * @summary Check whether this browser has unlocked the app
+ */
+export const getAccessStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<AccessStatus> => {
+
+  return customFetch<AccessStatus>(getGetAccessStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAccessStatusQueryKey = () => {
+    return [
+    `/api/access/status`
+    ] as const;
+    }
+
+
+export const getGetAccessStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAccessStatus>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccessStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccessStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccessStatus>>> = ({ signal }) => getAccessStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccessStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAccessStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAccessStatus>>>
+export type GetAccessStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether this browser has unlocked the app
+ */
+
+export function useGetAccessStatus<TData = Awaited<ReturnType<typeof getAccessStatus>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccessStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAccessStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUnlockAccessUrl = () => {
+
+
+
+
+  return `/api/access/unlock`
+}
+
+/**
+ * @summary Unlock the app with its shared four-digit code
+ */
+export const unlockAccess = async (accessCodeInput: AccessCodeInput, options?: Parameters<typeof customFetch>[1]): Promise<AccessStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AccessStatus>(getUnlockAccessUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(accessCodeInput)
+  }
+);}
+
+
+
+
+
+export const getUnlockAccessMutationKey = () => ['unlockAccess'] as const;
+
+export const getUnlockAccessMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlockAccess>>, TError,UnlockAccessMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unlockAccess>>, TError,UnlockAccessMutationVariables, TContext> => {
+
+const mutationKey = getUnlockAccessMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlockAccess>>, UnlockAccessMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  unlockAccess(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnlockAccessMutationResult = NonNullable<Awaited<ReturnType<typeof unlockAccess>>>
+    export type UnlockAccessMutationBody = BodyType<AccessCodeInput>
+    export type UnlockAccessMutationError = ErrorType<void>
+    export type UnlockAccessMutationVariables = {data: BodyType<AccessCodeInput>}
+
+    /**
+ * @summary Unlock the app with its shared four-digit code
+ */
+export const useUnlockAccess = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlockAccess>>, TError,UnlockAccessMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unlockAccess>>,
+        TError,
+        UnlockAccessMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnlockAccessMutationOptions(options));
+    }
 
 export const getListReportsUrl = (params?: ListReportsParams,) => {
   const normalizedParams = new URLSearchParams();

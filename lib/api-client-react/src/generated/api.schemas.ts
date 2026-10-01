@@ -51,6 +51,15 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface AccessCodeInput {
+  /** @pattern ^[0-9]{4}$ */
+  passcode: string;
+}
+
+export interface AccessStatus {
+  unlocked: boolean;
+}
+
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
 
 
