@@ -1,0 +1,676 @@
+Update my existing VTA Transit Support prototype to use two official public data sources:
+
+1. 511 SF Bay Open Transit Data
+   https://511.org/open-data/transit
+
+2. Santa Clara Valley Transportation Authority Open Data
+   https://data.vta.org/
+
+IMPORTANT:
+Do not rebuild or redesign the application.
+
+Keep all existing features:
+- resident report form
+- English/Vietnamese interface
+- speech input
+- AI-generated contextual response
+- persistent database
+- History page
+- existing styling
+- synthetic-record labeling
+
+The goal of this update is ONLY to connect the prototype to real public transit data and clearly show where every piece of information came from.
+
+==================================================
+1. 511 API AUTHENTICATION
+==================================================
+
+The 511 API key has already been added to Replit Secrets.
+
+Use this environment variable:
+
+SFBAY511_API_KEY
+
+Read it only from the backend/server.
+
+Example concept:
+
+process.env["SFBAY511_API_KEY"]
+
+or the equivalent for the application's current programming language.
+
+NEVER:
+- hardcode the API key
+- place it in frontend JavaScript
+- display it on the page
+- print it in console logs
+- save it in the database
+- include it in API responses sent to the browser
+
+If the secret is missing, show a developer-safe error without exposing credentials.
+
+==================================================
+2. IDENTIFY VTA IN 511
+==================================================
+
+Use the official 511 Operators API to determine the correct operator ID for Santa Clara Valley Transportation Authority.
+
+Endpoint:
+
+https://api.511.org/transit/operators
+
+Use:
+- api_key from SFBAY511_API_KEY
+- format=json when supported
+
+Do not guess the VTA operator ID.
+
+After identifying it, cache the operator information so the application does not repeatedly request it.
+
+==================================================
+3. 511 STATIC TRANSIT INFORMATION
+==================================================
+
+Use the official 511 APIs to match the route and stop entered by the resident.
+
+Use:
+
+LINES API
+https://api.511.org/transit/lines
+
+STOPS API
+https://api.511.org/transit/stops
+
+Use these to identify:
+- route number/name
+- official route ID
+- stop name
+- stop ID / stop code
+- stop location when available
+
+If multiple stops have similar names, do not silently guess.
+
+If possible, show the user a small list of matching stops or ask them to be more specific.
+
+Do not add a complicated trip-planning interface.
+
+==================================================
+4. LIVE 511 STOP INFORMATION
+==================================================
+
+Use the official 511 Stop Monitoring API:
+
+https://api.511.org/transit/StopMonitoring
+
+Use:
+- api_key
+- agency
+- stopcode when known
+- format=json
+
+Use this endpoint for current expected arrivals and departures.
+
+Only display information that actually exists in the returned API response.
+
+For example:
+
+"Live 511 data currently shows the next expected Route 22 arrival in approximately 8 minutes."
+
+The 8-minute value MUST come from the API response.
+
+Never invent:
+- arrival times
+- departure times
+- canceled trips
+- vehicle locations
+- delays
+
+==================================================
+5. 511 SERVICE ALERTS
+==================================================
+
+Use the official Service Alerts endpoint:
+
+https://api.511.org/transit/servicealerts
+
+Use:
+- api_key
+- agency
+- format=json
+
+Check whether an active alert appears relevant to the user's:
+- route
+- stop
+- reported issue
+
+If an alert is found, summarize it accurately.
+
+Example:
+
+"511 currently lists an active service alert affecting this route."
+
+If no matching alert is found, say:
+
+"No matching active service alert was found in the available 511 data."
+
+Do NOT turn that into:
+
+"There is no delay."
+
+A bus may be delayed without a service alert.
+
+==================================================
+6. VTA OPEN DATA
+==================================================
+
+Also connect the prototype to:
+
+https://data.vta.org/
+
+Treat this as an official VTA public-data source.
+
+First inspect the VTA Open Data catalog and identify a real, machine-readable dataset that is directly relevant to this prototype.
+
+Prefer a dataset related to:
+- transit stops
+- transit routes
+- transit facilities
+- service information
+- accessibility
+- other information directly relevant to the resident's transit report
+
+IMPORTANT:
+
+Do not invent:
+- dataset names
+- dataset IDs
+- API endpoints
+- file URLs
+- column names
+
+Only use a VTA dataset if it actually exists on data.vta.org.
+
+If the portal provides a CSV, JSON, GeoJSON, REST API, downloadable file, or another machine-readable resource, use that official resource.
+
+Store metadata about the dataset:
+
+- exact dataset title
+- publisher: Santa Clara Valley Transportation Authority
+- original source URL
+- resource/download URL
+- date retrieved
+
+Use VTA Open Data primarily as official reference/context data.
+
+Use 511 as the primary source for real-time arrivals and service alerts.
+
+Do not pretend that static VTA Open Data is real-time unless the actual dataset explicitly says that it is.
+
+==================================================
+7. REPORT FORM
+==================================================
+
+Keep the existing "Describe the problem" field.
+
+Add or keep these OPTIONAL fields:
+
+VTA Route
+Example:
+22
+
+Stop ID or Stop Name
+Example:
+Santa Clara & 1st
+
+Do not require these fields for every report.
+
+For example, a rider should still be able to submit:
+
+"The wheelchair ramp at my stop was blocked."
+
+However, explain that route/stop information may be needed to check live transit information.
+
+==================================================
+8. RESPONSE WORKFLOW
+==================================================
+
+When a resident submits a report:
+
+STEP A
+Save the resident's complete report.
+
+STEP B
+Identify the general issue type, such as:
+
+- Service Reliability
+- Missed Connection
+- Accessibility
+- Stop/Facility Issue
+- Safety Concern
+- Information/Signage
+- Other Transit Issue
+
+STEP C
+Check whether the resident supplied a route and/or stop.
+
+STEP D
+Use official route and stop information to verify the location when possible.
+
+STEP E
+If enough information exists, query 511 Stop Monitoring.
+
+STEP F
+Query relevant 511 Service Alerts.
+
+STEP G
+Use relevant VTA Open Data when it provides useful supporting context.
+
+STEP H
+Generate a short response using ONLY:
+
+1. information reported by the resident
+2. real information returned by 511
+3. verified information from VTA Open Data
+
+Do not allow the AI to invent missing facts.
+
+==================================================
+9. EXAMPLE RESPONSE
+==================================================
+
+Resident report:
+
+"[242] My Route 22 bus is late and I am waiting at Santa Clara & 1st."
+
+If live information exists, the response might look like:
+
+"Service Reliability Issue
+
+You reported that Route 22 is delayed at your stop.
+
+Live 511 data currently shows the next expected arrival in approximately 8 minutes.
+
+No matching active service alert was found for this route, so this prototype cannot confirm why the bus is delayed."
+
+IMPORTANT:
+
+"8 minutes" is only an example.
+
+The actual application must replace that with the real value returned by the API.
+
+==================================================
+10. ACCESSIBILITY EXAMPLE
+==================================================
+
+Resident report:
+
+"[242] The ramp area at my bus stop is blocked, which could make it difficult for someone using a wheelchair to board."
+
+Possible response:
+
+"Accessibility Issue
+
+You reported that the boarding area at this stop may be inaccessible to riders using wheelchairs or other mobility devices.
+
+This prototype has recorded the accessibility concern.
+
+Live arrival information does not determine whether the physical ramp area is blocked."
+
+If relevant verified VTA Open Data exists for that stop or facility, the response may reference it.
+
+Do not claim that VTA has inspected the stop.
+
+==================================================
+11. REAL DATA VS. SYNTHETIC DATA
+==================================================
+
+This is extremely important for the class project.
+
+Separate these two concepts:
+
+A. THE RESIDENT REPORT
+B. THE TRANSIT DATA USED TO RESPOND
+
+A classroom test report may be synthetic while the transit information used in the response is real.
+
+Example:
+
+Resident report:
+SYNTHETIC
+
+Transit information:
+LIVE 511 DATA
+
+Do NOT use one field to represent both concepts.
+
+Add fields similar to:
+
+input_is_synthetic
+input_source
+
+data_sources_used
+
+511_data_used
+vta_open_data_used
+
+source_retrieved_at
+
+==================================================
+12. SYNTHETIC RECORD IDENTIFICATION
+==================================================
+
+For classroom testing, reports containing:
+
+[242]
+
+should be treated as synthetic test records.
+
+For example:
+
+[242] My Route 22 bus is late.
+
+Store:
+
+input_is_synthetic = true
+
+Display a visible badge:
+
+SYNTHETIC TEST RECORD
+
+Also display explanatory text:
+
+"This resident report was created for prototype testing and does not represent a verified real-world rider report."
+
+Do NOT mark the 511 information itself as synthetic.
+
+If the app used real 511 information, also show:
+
+LIVE 511 DATA
+
+Therefore, one record may correctly display BOTH:
+
+[SYNTHETIC TEST RECORD]
+
+[LIVE 511 DATA]
+
+This means the rider scenario was simulated, but the transit data was real.
+
+==================================================
+13. NORMAL USER REPORTS
+==================================================
+
+If a report does NOT contain the classroom testing marker [242], treat it as:
+
+USER SUBMITTED
+
+Do not automatically claim that the contents are independently verified.
+
+The label means only that it was entered by a user rather than generated as classroom synthetic data.
+
+==================================================
+14. HISTORY PAGE
+==================================================
+
+Keep the current History page.
+
+Show records newest first.
+
+For every record display:
+
+- submitted report
+- issue category
+- AI/app response
+- route
+- stop
+- timestamp
+- synthetic/user-submitted status
+- public data sources used
+- source retrieval timestamp
+
+Use visible badges.
+
+Possible badges:
+
+SYNTHETIC TEST RECORD
+USER SUBMITTED
+LIVE 511 DATA
+VTA OPEN DATA
+NO LIVE DATA USED
+
+Example:
+
+--------------------------------
+
+SYNTHETIC TEST RECORD
+LIVE 511 DATA
+
+Report:
+[242] My Route 22 bus is late...
+
+Response:
+Live 511 data showed...
+
+Source:
+511 SF Bay Open Transit Data
+
+Retrieved:
+September 27, 2026 at 10:30 PM
+
+--------------------------------
+
+==================================================
+15. SAVE A DATA SNAPSHOT
+==================================================
+
+When live information is used, save a snapshot of the relevant information returned by the API.
+
+Suggested database fields:
+
+live_arrival_snapshot
+service_alert_snapshot
+vta_open_data_snapshot
+source_retrieved_at
+
+Do not continuously update old History records.
+
+Historical records should show the information that was available AT THE TIME the report was submitted.
+
+For example:
+
+If 511 showed an 8-minute expected arrival at 2:30 PM, keep that value in the saved record.
+
+Do not change that old record to whatever the arrival API reports later.
+
+==================================================
+16. DATA SOURCES DISPLAY
+==================================================
+
+Add a small "Data Sources" section to the existing interface.
+
+Keep it simple.
+
+Display:
+
+511 SF Bay Open Transit Data
+Used for live transit arrival/departure information and service alerts.
+https://511.org/open-data/transit
+
+Santa Clara Valley Transportation Authority Open Data
+Used for official VTA public datasets and reference information.
+https://data.vta.org/
+
+Include:
+
+"Some resident reports in this prototype are synthetic classroom test data. Synthetic records are clearly labeled."
+
+Also acknowledge 511 as the transit data provider where live 511 data is displayed.
+
+==================================================
+17. AI GROUNDING RULES
+==================================================
+
+The AI must clearly distinguish among:
+
+USER SAID:
+Information submitted by the resident.
+
+511 DATA:
+Information returned by the official 511 API.
+
+VTA OPEN DATA:
+Information retrieved from a verified VTA public dataset.
+
+AI INTERPRETATION:
+Classification or summary based on those sources.
+
+The AI must NEVER invent:
+
+- arrival times
+- vehicle locations
+- cancellations
+- service alerts
+- delay causes
+- stop conditions
+- VTA employee actions
+- official VTA responses
+
+If a fact is not present in one of the sources, do not state it as fact.
+
+==================================================
+18. FAILURE HANDLING
+==================================================
+
+If the 511 API fails:
+
+"Your report was saved, but live 511 transit information could not be retrieved at this time."
+
+If route/stop information is missing:
+
+"Your report was saved. A route and stop are needed to check live arrival information."
+
+If the route cannot be matched:
+
+"Your report was saved, but the route could not be matched to the available transit data."
+
+If the stop cannot be matched:
+
+"Your report was saved, but the stop could not be matched to the available transit data."
+
+If VTA Open Data cannot be reached:
+
+Continue using 511 if it is available.
+
+Do not fail the entire submission because the secondary VTA Open Data source is unavailable.
+
+==================================================
+19. DATABASE REQUIREMENTS
+==================================================
+
+Every submission must still create exactly ONE primary report record.
+
+Continue storing at minimum:
+
+- input
+- AI/app output
+- timestamp
+
+Also store when available:
+
+- issue category
+- route
+- route ID
+- stop
+- stop ID
+- input_is_synthetic
+- data sources used
+- live arrival snapshot
+- service alert snapshot
+- VTA Open Data dataset name
+- VTA Open Data source URL
+- VTA Open Data snapshot
+- source retrieval timestamp
+
+Do not expose the 511 API key in the database.
+
+==================================================
+20. RATE LIMIT / PERFORMANCE
+==================================================
+
+Do not continuously poll the 511 API.
+
+Only retrieve live information when necessary, especially when a report is submitted.
+
+Cache information that changes infrequently, including:
+
+- VTA operator information
+- route list
+- stop/reference information when appropriate
+
+Do not cache real-time arrival predictions for long periods.
+
+==================================================
+21. KEEP THE PROTOTYPE SMALL
+==================================================
+
+Do NOT add:
+
+- login
+- user accounts
+- maps
+- full trip planning
+- payment
+- notifications
+- analytics dashboards
+- vehicle tracking maps
+- unnecessary pages
+- complicated administration tools
+
+This is still a simple classroom prototype.
+
+The main workflow should remain:
+
+Resident report
+→ verify route/stop
+→ retrieve real public data when available
+→ generate grounded response
+→ save report + response + data source
+→ show record in History
+
+==================================================
+22. TESTING
+==================================================
+
+After implementation, test with:
+
+[242] My Route 22 bus is late and I am waiting at a VTA stop.
+
+For testing, use a REAL VTA route and REAL VTA stop returned by the official data sources.
+
+Verify:
+
+1. The 511 API authenticates using the Replit Secret.
+2. VTA is correctly identified in the Operators API.
+3. A real VTA route can be retrieved.
+4. A real VTA stop can be retrieved.
+5. Stop Monitoring is queried successfully.
+6. Service Alerts are queried successfully.
+7. The VTA Open Data source used by the app actually exists.
+8. No dataset names or values are fabricated.
+9. The report is saved to the database.
+10. The record remains after closing and reopening the app.
+11. The report shows SYNTHETIC TEST RECORD.
+12. Real 511 information shows LIVE 511 DATA.
+13. VTA public data shows VTA OPEN DATA when it was actually used.
+14. The API key never appears in frontend code, logs, History, or API responses.
+
+After completing the implementation, give me a short summary containing:
+
+- exact 511 endpoints used
+- verified VTA operator ID
+- exact VTA Open Data dataset used
+- what each source contributes
+- database fields added
+- one example of a successfully grounded response
+- any part that could not be connected or verified
+
+Do not claim that an integration works unless you successfully tested it.
