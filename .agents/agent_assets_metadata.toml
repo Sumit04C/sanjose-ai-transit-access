@@ -14,3 +14,17 @@ mtime_ms = 1790893784403
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:da2baa1f-2851-4e12-a7e9-36a0f42deb78/ece1dc1d-0a6d-4e26-a897-d3b44691f3be/de6865bb-598e-42ae-a4d6-746365c1fe57"
 storage_version_token = "1790893847701041"
 content_type = "image/png"
+
+[[outputs]]
+id = "bEDlTlNV90BhOZ4WZmkwW"
+uri = "file://exports/transit-report-test-qr.png"
+type = "image"
+title = "VTA Transit Support test QR code"
+description = "Scan this code to open the current Replit preview on your phone. The preview is available while the workspace is running."
+logical_id = "7edadefe-be68-459d-83ed-fb8889d3b6a9"
+content_hash = "sha256:f81ba97628f96f6cf0b421217fd999d9d519b898bce737cec103daf8389d4c52"
+size = 1138
+mtime_ms = 1790977363238
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:da2baa1f-2851-4e12-a7e9-36a0f42deb78/7edadefe-be68-459d-83ed-fb8889d3b6a9/6eacd6df-1cef-4666-96c8-ab036ba9dab6"
+storage_version_token = "1790977366849565"
+content_type = "image/png"
