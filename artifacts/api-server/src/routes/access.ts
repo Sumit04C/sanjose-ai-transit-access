@@ -1,15 +1,17 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
+import { timingSafeEqual } from "node:crypto";
 import {
   GetAccessStatusResponse,
   UnlockAccessBody,
   UnlockAccessResponse,
 } from "@workspace/api-zod";
 import {
+  type AppAccessConfig,
   ACCESS_COOKIE_NAME,
   ACCESS_SESSION_DURATION_MS,
   createAccessCookieValue,
   getAppAccessConfig,
-  hasValidAccessCookie,
+  getAccessSessionRole,
 } from "../lib/access-session";
 
 const router: IRouter = Router();
@@ -23,7 +25,16 @@ function constantTimePasscodeMatch(candidate: string, expected: string): boolean
   const expectedBytes = Buffer.from(expected, "utf8");
 
   return candidateBytes.length === expectedBytes.length
-    && require("node:crypto").timingSafeEqual(candidateBytes, expectedBytes);
+    && timingSafeEqual(candidateBytes, expectedBytes);
+}
+
+function getStatus(req: Request, config: AppAccessConfig) {
+  const role = getAccessSessionRole(req.cookies?.[ACCESS_COOKIE_NAME], config);
+  return {
+    unlocked: role !== null,
+    role,
+    reviewerAvailable: config.reviewerPasscode !== null,
+  };
 }
 
 function getFailureWindow(ip: string, now: number): { failures: number; resetAt: number } {
@@ -52,12 +63,7 @@ router.get("/status", (req, res): void => {
     return;
   }
 
-  res.json(GetAccessStatusResponse.parse({
-    unlocked: hasValidAccessCookie(
-      req.cookies?.[ACCESS_COOKIE_NAME],
-      config.sessionSecret,
-    ),
-  }));
+  res.json(GetAccessStatusResponse.parse(getStatus(req, config)));
 });
 
 router.post("/unlock", (req, res): void => {
@@ -84,7 +90,10 @@ router.post("/unlock", (req, res): void => {
     return;
   }
 
-  if (!constantTimePasscodeMatch(parsed.data.passcode, config.passcode)) {
+  const role = parsed.data.role ?? "reporter";
+  const expectedPasscode =
+    role === "reporter" ? config.reporterPasscode : config.reviewerPasscode;
+  if (!expectedPasscode || !constantTimePasscodeMatch(parsed.data.passcode, expectedPasscode)) {
     failureWindow.failures += 1;
     res.status(failureWindow.failures >= MAX_FAILED_ATTEMPTS ? 429 : 401)
       .json({ error: "The access code was not accepted." });
@@ -95,7 +104,7 @@ router.post("/unlock", (req, res): void => {
   const expiresAt = now + ACCESS_SESSION_DURATION_MS;
   res.cookie(
     ACCESS_COOKIE_NAME,
-    createAccessCookieValue(expiresAt, config.sessionSecret),
+    createAccessCookieValue(expiresAt, config, role),
     {
       httpOnly: true,
       secure: req.secure,
@@ -104,7 +113,25 @@ router.post("/unlock", (req, res): void => {
       maxAge: ACCESS_SESSION_DURATION_MS,
     },
   );
-  res.json(UnlockAccessResponse.parse({ unlocked: true }));
+  res.json(UnlockAccessResponse.parse({
+    unlocked: true,
+    role,
+    reviewerAvailable: config.reviewerPasscode !== null,
+  }));
+});
+
+router.post("/logout", (req, res): void => {
+  const config = getAppAccessConfig();
+  res.clearCookie(ACCESS_COOKIE_NAME, {
+    secure: req.secure,
+    sameSite: "lax",
+    path: "/",
+  });
+  res.json(GetAccessStatusResponse.parse({
+    unlocked: false,
+    role: null,
+    reviewerAvailable: config !== null && config.reviewerPasscode !== null,
+  }));
 });
 
 export default router;

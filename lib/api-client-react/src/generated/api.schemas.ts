@@ -132,13 +132,36 @@ export interface HealthStatus {
   status: string;
 }
 
+export type AccessCodeInputRole = typeof AccessCodeInputRole[keyof typeof AccessCodeInputRole];
+
+
+export const AccessCodeInputRole = {
+  reporter: 'reporter',
+  reviewer: 'reviewer',
+} as const;
+
 export interface AccessCodeInput {
   /** @pattern ^[0-9]{4}$ */
   passcode: string;
+  role?: AccessCodeInputRole;
 }
+
+/**
+ * @nullable
+ */
+export type AccessStatusRole = typeof AccessStatusRole[keyof typeof AccessStatusRole] | null;
+
+
+export const AccessStatusRole = {
+  reporter: 'reporter',
+  reviewer: 'reviewer',
+} as const;
 
 export interface AccessStatus {
   unlocked: boolean;
+  /** @nullable */
+  role: AccessStatusRole;
+  reviewerAvailable: boolean;
 }
 
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];

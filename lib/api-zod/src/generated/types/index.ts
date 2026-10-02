@@ -7,7 +7,9 @@
  */
 
 export * from './accessCodeInput';
+export * from './accessCodeInputRole';
 export * from './accessStatus';
+export * from './accessStatusRole';
 export * from './getTransitMatchesParams';
 export * from './healthStatus';
 export * from './listReportsParams';

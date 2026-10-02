@@ -226,7 +226,7 @@ export const getUnlockAccessUrl = () => {
 }
 
 /**
- * @summary Unlock the app with its shared four-digit code
+ * @summary Unlock the reporting or saved-reports view with its four-digit code
  */
 export const unlockAccess = async (accessCodeInput: AccessCodeInput, options?: Parameters<typeof customFetch>[1]): Promise<AccessStatus> => {
 
@@ -292,7 +292,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UnlockAccessMutationVariables = {data: BodyType<AccessCodeInput>}
 
     /**
- * @summary Unlock the app with its shared four-digit code
+ * @summary Unlock the reporting or saved-reports view with its four-digit code
  */
 export const useUnlockAccess = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlockAccess>>, TError,UnlockAccessMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -303,6 +303,80 @@ export const useUnlockAccess = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUnlockAccessMutationOptions(options));
+    }
+
+export const getLogoutAccessUrl = () => {
+
+
+
+
+  return `/api/access/logout`
+}
+
+/**
+ * @summary Clear this browser's access session
+ */
+export const logoutAccess = async ( options?: Parameters<typeof customFetch>[1]): Promise<AccessStatus> => {
+
+  return customFetch<AccessStatus>(getLogoutAccessUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutAccessMutationKey = () => ['logoutAccess'] as const;
+
+export const getLogoutAccessMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutAccess>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutAccess>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutAccessMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutAccess>>, void> = () => {
+
+
+          return  logoutAccess(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutAccessMutationResult = NonNullable<Awaited<ReturnType<typeof logoutAccess>>>
+
+    export type LogoutAccessMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Clear this browser's access session
+ */
+export const useLogoutAccess = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutAccess>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutAccess>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutAccessMutationOptions(options));
     }
 
 export const getListReportsUrl = (params?: ListReportsParams,) => {

@@ -21,22 +21,37 @@ export const HealthCheckResponse = zod.object({
  * @summary Check whether this browser has unlocked the app
  */
 export const GetAccessStatusResponse = zod.object({
-  "unlocked": zod.boolean()
+  "unlocked": zod.boolean(),
+  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal(null)]).nullable(),
+  "reviewerAvailable": zod.boolean()
 })
 
 
 /**
- * @summary Unlock the app with its shared four-digit code
+ * @summary Unlock the reporting or saved-reports view with its four-digit code
  */
 export const unlockAccessBodyPasscodeRegExp = new RegExp('^[0-9]{4}$');
-
+export const unlockAccessBodyRoleDefault = `reporter`;
 
 export const UnlockAccessBody = zod.object({
-  "passcode": zod.string().regex(unlockAccessBodyPasscodeRegExp)
+  "passcode": zod.string().regex(unlockAccessBodyPasscodeRegExp),
+  "role": zod.enum(['reporter', 'reviewer']).default(unlockAccessBodyRoleDefault)
 })
 
 export const UnlockAccessResponse = zod.object({
-  "unlocked": zod.boolean()
+  "unlocked": zod.boolean(),
+  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal(null)]).nullable(),
+  "reviewerAvailable": zod.boolean()
+})
+
+
+/**
+ * @summary Clear this browser's access session
+ */
+export const LogoutAccessResponse = zod.object({
+  "unlocked": zod.boolean(),
+  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal(null)]).nullable(),
+  "reviewerAvailable": zod.boolean()
 })
 
 

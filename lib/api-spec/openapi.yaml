@@ -17,7 +17,7 @@ tags:
   - name: submissions
     description: Rider issue submissions and stored prototype responses
   - name: access
-    description: Shared passcode access for the class-project app
+    description: Role-specific shared passcode access for reporting and review
 paths:
   /healthz:
     get:
@@ -50,7 +50,7 @@ paths:
     post:
       operationId: unlockAccess
       tags: [access]
-      summary: Unlock the app with its shared four-digit code
+      summary: Unlock the reporting or saved-reports view with its four-digit code
       requestBody:
         required: true
         content:
@@ -72,6 +72,18 @@ paths:
           description: Too many incorrect attempts
         "503":
           description: App access code is not configured
+  /access/logout:
+    post:
+      operationId: logoutAccess
+      tags: [access]
+      summary: Clear this browser's access session
+      responses:
+        "200":
+          description: Access session cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessStatus"
   /reports:
     get:
       operationId: listReports
@@ -346,13 +358,22 @@ components:
         passcode:
           type: string
           pattern: "^[0-9]{4}$"
+        role:
+          type: string
+          enum: [reporter, reviewer]
+          default: reporter
       required: [passcode]
     AccessStatus:
       type: object
       properties:
         unlocked:
           type: boolean
-      required: [unlocked]
+        role:
+          type: [string, "null"]
+          enum: [reporter, reviewer, null]
+        reviewerAvailable:
+          type: boolean
+      required: [unlocked, role, reviewerAvailable]
     ReportStatus:
       type: string
       enum: [submitted, reviewing, assigned, resolved]

@@ -5,8 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AccessCodeInputRole } from './accessCodeInputRole';
 
 export interface AccessCodeInput {
   /** @pattern ^[0-9]{4}$ */
   passcode: string;
+  role?: AccessCodeInputRole;
 }

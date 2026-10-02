@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Link, Route, Switch, useLocation } from 'wouter';
-import { getGetAccessStatusQueryKey, getGetTransitMatchesQueryKey, getListSubmissionsQueryKey, useCreateSubmission, useGetAccessStatus, useGetTransitMatches, useUnlockAccess } from '@workspace/api-client-react';
+import { Link, Redirect, Route, Switch, useLocation } from 'wouter';
+import { getGetAccessStatusQueryKey, getGetTransitMatchesQueryKey, getListSubmissionsQueryKey, useCreateSubmission, useGetAccessStatus, useGetTransitMatches, useLogoutAccess, useUnlockAccess } from '@workspace/api-client-react';
 import type { RiderSubmission } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 import RecordsPage from '@/pages/records';
@@ -14,6 +14,7 @@ import {
   ImagePlus,
   Languages,
   Loader2,
+  LogOut,
   MapPin,
   Mic,
   Paperclip,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 
 export type Language = 'vi' | 'en' | 'es' | 'pa';
+type AccessRole = 'reporter' | 'reviewer';
 
 const queryClient = new QueryClient();
 
@@ -82,13 +84,14 @@ const copy = {
     pagesLabel: 'Các trang',
     reportNav: 'Báo cáo vấn đề',
     recordsNav: 'Các báo cáo đã lưu',
+    changeAccess: 'Đổi mã truy cập',
     viewRecords: 'Xem các báo cáo đã lưu',
     submittedLabel: 'Thời điểm gửi',
     submitError: 'Không thể lưu báo cáo. Vui lòng thử lại.',
     eyebrow: 'HỖ TRỢ HÀNH KHÁCH VTA',
     title: 'Báo cáo vấn đề giao thông VTA',
     instruction: 'Hãy mô tả vấn đề bạn gặp phải khi sử dụng phương tiện giao thông công cộng.',
-    privacy: 'Bản thử nghiệm: các báo cáo đã lưu có thể xem trên trang báo cáo.',
+    privacy: 'Các báo cáo đã lưu cần mã truy cập riêng để xem.',
     stepOne: 'Bước 1 / 2',
     describeHeading: 'Điều gì đã xảy ra?',
     describeLabel: 'Mô tả vấn đề',
@@ -152,13 +155,14 @@ const copy = {
     pagesLabel: 'Pages',
     reportNav: 'Report an issue',
     recordsNav: 'Saved reports',
+    changeAccess: 'Switch access',
     viewRecords: 'View saved reports',
     submittedLabel: 'Submitted',
     submitError: 'We could not save your report. Please try again.',
     eyebrow: 'VTA RIDER SUPPORT',
     title: 'Report a VTA Transit Issue',
     instruction: 'Describe the problem you experienced while using public transportation.',
-    privacy: 'Prototype: saved reports are visible on the records page.',
+    privacy: 'Saved reports require a separate access code to view.',
     stepOne: 'Step 1 / 2',
     describeHeading: 'What happened?',
     describeLabel: 'Describe the problem',
@@ -222,13 +226,14 @@ const copy = {
     pagesLabel: 'Páginas',
     reportNav: 'Reportar un problema',
     recordsNav: 'Reportes guardados',
+    changeAccess: 'Cambiar acceso',
     viewRecords: 'Ver reportes guardados',
     submittedLabel: 'Fecha de envío',
     submitError: 'No pudimos guardar su reporte. Inténtelo de nuevo.',
     eyebrow: 'ATENCIÓN A PASAJEROS DE VTA',
     title: 'Reportar un problema de transporte de VTA',
     instruction: 'Describa el problema que tuvo al usar el transporte público.',
-    privacy: 'Prototipo: los reportes guardados se pueden ver en la página de reportes.',
+    privacy: 'Se necesita un código de acceso separado para ver los reportes guardados.',
     stepOne: 'Paso 1 / 2',
     describeHeading: '¿Qué ocurrió?',
     describeLabel: 'Describa el problema',
@@ -292,13 +297,14 @@ const copy = {
     pagesLabel: 'ਪੰਨੇ',
     reportNav: 'ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
     recordsNav: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ',
+    changeAccess: 'ਐਕਸੈੱਸ ਬਦਲੋ',
     viewRecords: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਵੇਖੋ',
     submittedLabel: 'ਭੇਜਣ ਦਾ ਸਮਾਂ',
     submitError: 'ਤੁਹਾਡੀ ਰਿਪੋਰਟ ਸੰਭਾਲੀ ਨਹੀਂ ਜਾ ਸਕੀ। ਕਿਰਪਾ ਕਰਕੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
     eyebrow: 'VTA ਯਾਤਰੀ ਸਹਾਇਤਾ',
     title: 'VTA ਆਵਾਜਾਈ ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
     instruction: 'ਜਨਤਕ ਆਵਾਜਾਈ ਦੀ ਵਰਤੋਂ ਕਰਦੇ ਸਮੇਂ ਤੁਹਾਨੂੰ ਆਈ ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ।',
-    privacy: 'ਨਮੂਨਾ ਐਪ: ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਰਿਪੋਰਟਾਂ ਵਾਲੇ ਪੰਨੇ ਤੇ ਵੇਖੀਆਂ ਜਾ ਸਕਦੀਆਂ ਹਨ।',
+    privacy: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਦੇਖਣ ਲਈ ਵੱਖਰਾ ਐਕਸੈੱਸ ਕੋਡ ਲੋੜੀਂਦਾ ਹੈ।',
     stepOne: 'ਕਦਮ 1 / 2',
     describeHeading: 'ਕੀ ਹੋਇਆ ਸੀ?',
     describeLabel: 'ਸਮੱਸਿਆ ਬਾਰੇ ਦੱਸੋ',
@@ -361,6 +367,9 @@ const accessCopy: Record<Language, {
   title: string;
   description: string;
   label: string;
+  reporterMode: string;
+  reviewerMode: string;
+  reviewerUnavailable: string;
   submit: string;
   checking: string;
   error: string;
@@ -369,8 +378,11 @@ const accessCopy: Record<Language, {
 }> = {
   vi: {
     title: 'Nhập mã truy cập',
-    description: 'Nhập mã gồm bốn chữ số để tiếp tục đến báo cáo giao thông.',
+    description: 'Chọn mã dành cho người gửi báo cáo hoặc người xem các báo cáo đã lưu.',
     label: 'Mã truy cập gồm bốn chữ số',
+    reporterMode: 'Gửi báo cáo vấn đề',
+    reviewerMode: 'Xem báo cáo đã lưu',
+    reviewerUnavailable: 'Mã xem báo cáo chưa được thiết lập.',
     submit: 'Mở ứng dụng',
     checking: 'Đang kiểm tra quyền truy cập…',
     error: 'Mã không đúng hoặc đã vượt quá số lần thử. Vui lòng thử lại sau.',
@@ -379,8 +391,11 @@ const accessCopy: Record<Language, {
   },
   en: {
     title: 'Enter the access code',
-    description: 'Enter the four-digit code to continue to the transit report app.',
+    description: 'Choose the code for submitting a report or viewing saved reports.',
     label: 'Four-digit access code',
+    reporterMode: 'Report an issue',
+    reviewerMode: 'View saved reports',
+    reviewerUnavailable: 'The saved-reports access code has not been configured.',
     submit: 'Unlock app',
     checking: 'Checking access…',
     error: 'The code was not accepted or attempts are temporarily limited. Try again later.',
@@ -389,8 +404,11 @@ const accessCopy: Record<Language, {
   },
   es: {
     title: 'Ingresa el código de acceso',
-    description: 'Ingresa el código de cuatro dígitos para continuar a la aplicación de reportes.',
+    description: 'Elige el código para enviar un reporte o ver los reportes guardados.',
     label: 'Código de acceso de cuatro dígitos',
+    reporterMode: 'Reportar un problema',
+    reviewerMode: 'Ver reportes guardados',
+    reviewerUnavailable: 'El código para ver los reportes guardados no está configurado.',
     submit: 'Desbloquear',
     checking: 'Verificando acceso…',
     error: 'No se aceptó el código o los intentos están limitados temporalmente. Inténtalo más tarde.',
@@ -399,8 +417,11 @@ const accessCopy: Record<Language, {
   },
   pa: {
     title: 'ਐਕਸੈੱਸ ਕੋਡ ਦਾਖ਼ਲ ਕਰੋ',
-    description: 'ਟ੍ਰਾਂਜ਼ਿਟ ਰਿਪੋਰਟ ਐਪ ਵਿੱਚ ਜਾਣ ਲਈ ਚਾਰ ਅੰਕਾਂ ਵਾਲਾ ਕੋਡ ਦਾਖ਼ਲ ਕਰੋ।',
+    description: 'ਰਿਪੋਰਟ ਭੇਜਣ ਜਾਂ ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਦੇਖਣ ਲਈ ਕੋਡ ਚੁਣੋ।',
     label: 'ਚਾਰ ਅੰਕਾਂ ਵਾਲਾ ਐਕਸੈੱਸ ਕੋਡ',
+    reporterMode: 'ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
+    reviewerMode: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਵੇਖੋ',
+    reviewerUnavailable: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਲਈ ਐਕਸੈੱਸ ਕੋਡ ਸੈੱਟ ਨਹੀਂ ਕੀਤਾ ਗਿਆ।',
     submit: 'ਐਪ ਖੋਲ੍ਹੋ',
     checking: 'ਐਕਸੈੱਸ ਦੀ ਜਾਂਚ ਹੋ ਰਹੀ ਹੈ…',
     error: 'ਕੋਡ ਸਵੀਕਾਰ ਨਹੀਂ ਹੋਇਆ ਜਾਂ ਕੋਸ਼ਿਸ਼ਾਂ ਅਸਥਾਈ ਤੌਰ ਤੇ ਸੀਮਿਤ ਹਨ। ਬਾਅਦ ਵਿੱਚ ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
@@ -411,19 +432,22 @@ const accessCopy: Record<Language, {
 
 function AccessGate({
   language,
+  reviewerAvailable,
   unavailable = false,
   onUnlocked,
   onRetry,
 }: {
   language: Language;
+  reviewerAvailable: boolean;
   unavailable?: boolean;
-  onUnlocked: () => void;
+  onUnlocked: (role: AccessRole) => void;
   onRetry: () => void;
 }) {
   const t = accessCopy[language];
   const unlock = useUnlockAccess();
   const [passcode, setPasscode] = useState('');
   const [hasError, setHasError] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<AccessRole>('reporter');
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -434,11 +458,11 @@ function AccessGate({
 
     setHasError(false);
     unlock.mutate(
-      { data: { passcode } },
+      { data: { passcode, role: selectedRole } },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           setPasscode('');
-          onUnlocked();
+          onUnlocked(result.role ?? selectedRole);
         },
         onError: () => {
           setPasscode('');
@@ -475,6 +499,33 @@ function AccessGate({
       </div>
       <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
       <p className="mt-3 text-sm leading-6 text-[hsl(var(--muted-foreground))]">{t.description}</p>
+      <div className="mt-6 grid gap-2 sm:grid-cols-2" role="group" aria-label={t.description}>
+        {([
+          ['reporter', t.reporterMode, true],
+          ['reviewer', t.reviewerMode, reviewerAvailable],
+        ] as const).map(([role, label, enabled]) => (
+          <button
+            key={role}
+            type="button"
+            onClick={() => {
+              setSelectedRole(role);
+              setPasscode('');
+              setHasError(false);
+            }}
+            disabled={!enabled || unlock.isPending}
+            aria-pressed={selectedRole === role}
+            className={`focus-ring min-h-12 rounded-xl border px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${selectedRole === role ? 'border-[hsl(var(--primary))] bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]' : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]'}`}
+            data-testid={`button-access-role-${role}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {!reviewerAvailable && (
+        <p className="mt-2 text-xs leading-5 text-[hsl(var(--muted-foreground))]" role="status">
+          {t.reviewerUnavailable}
+        </p>
+      )}
       <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
         <label htmlFor="app-access-code" className="block text-sm font-semibold">
           {t.label}
@@ -514,7 +565,19 @@ function AccessGate({
   );
 }
 
-function Header({ language, onLanguageChange }: { language: Language; onLanguageChange: (language: Language) => void }) {
+function Header({
+  language,
+  onLanguageChange,
+  role,
+  onChangeAccess,
+  switchingAccess,
+}: {
+  language: Language;
+  onLanguageChange: (language: Language) => void;
+  role: AccessRole | null;
+  onChangeAccess: () => void;
+  switchingAccess: boolean;
+}) {
   const t = copy[language];
   const [location] = useLocation();
   return (
@@ -545,10 +608,26 @@ function Header({ language, onLanguageChange }: { language: Language; onLanguage
           ))}
         </nav>
       </div>
-      <nav className="mx-auto flex max-w-4xl gap-1.5 overflow-x-auto px-4 pb-3 sm:gap-2 sm:px-8" aria-label={t.pagesLabel}>
-        <Link href="/" aria-current={location === '/' ? 'page' : undefined} className={`focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-2.5 text-xs font-bold transition-colors sm:px-4 ${location === '/' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-report-page">{t.reportNav}</Link>
-        <Link href="/records" aria-current={location === '/records' ? 'page' : undefined} className={`focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-2.5 text-xs font-bold transition-colors sm:px-4 ${location === '/records' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-records-page">{t.recordsNav}</Link>
-      </nav>
+      {role && (
+        <nav className="mx-auto flex max-w-4xl flex-wrap items-center gap-1.5 px-4 pb-3 sm:gap-2 sm:px-8" aria-label={t.pagesLabel}>
+          {role === 'reporter' && (
+            <Link href="/" aria-current={location === '/' ? 'page' : undefined} className={`focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-2.5 text-xs font-bold transition-colors sm:px-4 ${location === '/' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-report-page">{t.reportNav}</Link>
+          )}
+          {role === 'reviewer' && (
+            <Link href="/records" aria-current={location === '/records' ? 'page' : undefined} className={`focus-ring inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 py-2.5 text-xs font-bold transition-colors sm:px-4 ${location === '/records' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]'}`} data-testid="link-records-page">{t.recordsNav}</Link>
+          )}
+          <button
+            type="button"
+            onClick={onChangeAccess}
+            disabled={switchingAccess}
+            className="focus-ring ml-auto inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-[hsl(var(--border))] px-3 py-2.5 text-xs font-bold text-[hsl(var(--muted-foreground))] disabled:opacity-60 sm:px-4"
+            data-testid="button-change-access"
+          >
+            {switchingAccess ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+            {t.changeAccess}
+          </button>
+        </nav>
+      )}
     </header>
   );
 }
@@ -900,11 +979,13 @@ function SubmittedReport({
   report,
   image,
   onNewReport,
+  onChangeAccess,
 }: {
   language: Language;
   report: RiderSubmission;
   image: ImageAttachment | null;
   onNewReport: () => void;
+  onChangeAccess: () => void;
 }) {
   const t = copy[language];
   const responseKind = (report as RiderSubmission & { responseKind?: string }).responseKind;
@@ -981,7 +1062,9 @@ function SubmittedReport({
             <button type="button" onClick={onNewReport} className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--secondary))]" data-testid="button-new-report">
               <ArrowLeft size={17} />{t.newReport}
             </button>
-            <Link href="/records" className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] hover:opacity-90" data-testid="link-view-records">{t.viewRecords}</Link>
+            <button type="button" onClick={onChangeAccess} className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] hover:opacity-90" data-testid="button-switch-access">
+              <LogOut size={16} />{t.changeAccess}
+            </button>
           </div>
         </div>
       </section>
@@ -996,22 +1079,47 @@ function SubmittedReport({
 function TransitApp() {
   const [language, setLanguage] = useState<Language>('vi');
   const [submitted, setSubmitted] = useState<{ report: RiderSubmission; image: ImageAttachment | null } | null>(null);
-  const [locallyUnlocked, setLocallyUnlocked] = useState(false);
+  const [localRole, setLocalRole] = useState<AccessRole | null>(null);
+  const logoutAccess = useLogoutAccess();
   const accessStatus = useGetAccessStatus({
     query: { queryKey: getGetAccessStatusQueryKey(), retry: false },
   });
   const t = copy[language];
-  const [location] = useLocation();
-  const hasAccess = locallyUnlocked || accessStatus.data?.unlocked === true;
+  const [location, setLocation] = useLocation();
+  const activeRole = localRole ?? accessStatus.data?.role ?? null;
+  const hasAccess = activeRole !== null && (localRole !== null || accessStatus.data?.unlocked === true);
 
   useEffect(() => {
     document.documentElement.lang = language;
-    document.title = location === '/records' ? `${t.recordsNav} | VTA` : t.title;
-  }, [language, location, t.recordsNav, t.title]);
+    document.title = activeRole === 'reviewer' ? `${t.recordsNav} | VTA` : t.title;
+  }, [activeRole, language, t.recordsNav, t.title]);
+
+  useEffect(() => {
+    if (activeRole === 'reviewer' && location !== '/records') setLocation('/records');
+    if (activeRole === 'reporter' && location === '/records') setLocation('/');
+  }, [activeRole, location, setLocation]);
+
+  const handleAccessChange = () => {
+    logoutAccess.mutate(undefined, {
+      onSuccess: (status) => {
+        queryClient.clear();
+        queryClient.setQueryData(getGetAccessStatusQueryKey(), status);
+        setLocalRole(null);
+        setSubmitted(null);
+        setLocation('/');
+      },
+    });
+  };
 
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      <Header language={language} onLanguageChange={setLanguage} />
+      <Header
+        language={language}
+        onLanguageChange={setLanguage}
+        role={activeRole}
+        onChangeAccess={handleAccessChange}
+        switchingAccess={logoutAccess.isPending}
+      />
       <div
         className="border-b border-[hsl(var(--accent)/.75)] bg-[hsl(var(--secondary))] px-4 py-2.5"
         role="note"
@@ -1029,12 +1137,20 @@ function TransitApp() {
         ) : !hasAccess ? (
           <AccessGate
             language={language}
+            reviewerAvailable={accessStatus.data?.reviewerAvailable ?? false}
             unavailable={accessStatus.isError}
-            onUnlocked={() => setLocallyUnlocked(true)}
+            onUnlocked={(role) => {
+              setLocalRole(role);
+              setSubmitted(null);
+              setLocation(role === 'reviewer' ? '/records' : '/');
+            }}
             onRetry={() => { void accessStatus.refetch(); }}
           />
+        ) : activeRole === 'reviewer' ? (
+          <RecordsPage language={language} />
         ) : (
           <Switch>
+            <Route path="/records"><Redirect to="/" /></Route>
             <Route path="/">
               <div className="mx-auto max-w-2xl">
                 <div className="mb-7 flex items-center justify-between gap-3 sm:mb-8 sm:gap-4">
@@ -1058,11 +1174,16 @@ function TransitApp() {
                     <ReportForm language={language} onSubmitted={(report, image) => setSubmitted({ report, image })} />
                   </>
                 ) : (
-                  <SubmittedReport language={language} report={submitted.report} image={submitted.image} onNewReport={() => setSubmitted(null)} />
+                  <SubmittedReport
+                    language={language}
+                    report={submitted.report}
+                    image={submitted.image}
+                    onNewReport={() => setSubmitted(null)}
+                    onChangeAccess={handleAccessChange}
+                  />
                 )}
               </div>
             </Route>
-            <Route path="/records"><RecordsPage language={language} /></Route>
             <Route component={NotFound} />
           </Switch>
         )}

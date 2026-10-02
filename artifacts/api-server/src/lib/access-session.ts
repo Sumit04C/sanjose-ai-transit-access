@@ -4,55 +4,111 @@ import type { RequestHandler } from "express";
 export const ACCESS_COOKIE_NAME = "transit_report_access";
 export const ACCESS_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 
+export type AppAccessRole = "reporter" | "reviewer";
 export type AppAccessConfig = {
-  passcode: string;
+  reporterPasscode: string;
+  reviewerPasscode: string | null;
   sessionSecret: string;
 };
 
+const isFourDigitCode = (value: string | undefined): value is string =>
+  !!value && /^[0-9]{4}$/.test(value);
+
 export function getAppAccessConfig(): AppAccessConfig | null {
-  const passcode = process.env.TRANSIT_REPORT_PASSCODE;
+  const reporterPasscode = process.env.TRANSIT_REPORT_PASSCODE;
   const sessionSecret = process.env.SESSION_SECRET;
+  if (!isFourDigitCode(reporterPasscode) || !sessionSecret) return null;
 
-  if (!passcode || !/^[0-9]{4}$/.test(passcode) || !sessionSecret) {
-    return null;
-  }
+  const configuredReviewerPasscode = process.env.TRANSIT_REPORT_REVIEW_PASSCODE;
+  const reviewerPasscode =
+    isFourDigitCode(configuredReviewerPasscode) &&
+    configuredReviewerPasscode !== reporterPasscode
+      ? configuredReviewerPasscode
+      : null;
 
-  return { passcode, sessionSecret };
+  return { reporterPasscode, reviewerPasscode, sessionSecret };
 }
 
-function signExpiry(expiresAt: number, sessionSecret: string): Buffer {
-  return createHmac("sha256", sessionSecret)
-    .update(String(expiresAt))
-    .digest();
+function hmac(value: string, sessionSecret: string): Buffer {
+  return createHmac("sha256", sessionSecret).update(value).digest();
+}
+
+function roleCode(config: AppAccessConfig, role: AppAccessRole): string | null {
+  return role === "reporter" ? config.reporterPasscode : config.reviewerPasscode;
 }
 
 export function createAccessCookieValue(
   expiresAt: number,
-  sessionSecret: string,
+  config: AppAccessConfig,
+  role: AppAccessRole,
 ): string {
-  const signature = signExpiry(expiresAt, sessionSecret).toString("base64url");
-  return `${expiresAt}.${signature}`;
+  const code = roleCode(config, role);
+  if (!code) throw new Error("Cannot create a session for an unconfigured access role.");
+  const codeTag = hmac(`session:${role}:${code}`, config.sessionSecret).toString("base64url");
+  const payload = `${expiresAt}.${role}.${codeTag}`;
+  const signature = hmac(payload, config.sessionSecret).toString("base64url");
+  return `${payload}.${signature}`;
 }
 
-export function hasValidAccessCookie(
+function signatureMatches(value: string, signature: string, sessionSecret: string): boolean {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(signature)) return false;
+  const supplied = Buffer.from(signature, "base64url");
+  const expected = hmac(value, sessionSecret);
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+}
+
+export function getAccessSessionRole(
   cookieValue: unknown,
-  sessionSecret: string,
+  config: AppAccessConfig,
   now = Date.now(),
-): boolean {
-  if (typeof cookieValue !== "string") return false;
+): AppAccessRole | null {
+  if (typeof cookieValue !== "string") return null;
+  const parts = cookieValue.split(".");
+  if (parts.length !== 4 && parts.length !== 2) return null;
 
-  const [expiryText, signatureText, extra] = cookieValue.split(".");
-  if (!expiryText || !signatureText || extra !== undefined) return false;
-
+  const [expiryText, roleOrSignature, tag, signature] = parts;
   const expiresAt = Number(expiryText);
-  if (!Number.isSafeInteger(expiresAt) || expiresAt <= now) return false;
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= now) return null;
 
-  const suppliedSignature = Buffer.from(signatureText, "base64url");
-  const expectedSignature = signExpiry(expiresAt, sessionSecret);
-  if (suppliedSignature.length !== expectedSignature.length) return false;
+  // Retain existing eight-hour reporter sessions during the role-gate rollout.
+  if (parts.length === 2) {
+    return signatureMatches(expiryText, roleOrSignature, config.sessionSecret)
+      ? "reporter"
+      : null;
+  }
 
-  return timingSafeEqual(suppliedSignature, expectedSignature);
+  if (roleOrSignature !== "reporter" && roleOrSignature !== "reviewer") return null;
+  const role = roleOrSignature;
+  const code = roleCode(config, role);
+  if (!code || !tag || !signature) return null;
+
+  const payload = `${expiryText}.${role}.${tag}`;
+  if (!signatureMatches(payload, signature, config.sessionSecret)) return null;
+  const expectedTag = hmac(`session:${role}:${code}`, config.sessionSecret);
+  const suppliedTag = Buffer.from(tag, "base64url");
+  if (
+    suppliedTag.length !== expectedTag.length ||
+    !timingSafeEqual(suppliedTag, expectedTag)
+  ) {
+    return null;
+  }
+  return role;
 }
+
+export const canAccessRoute = (
+  role: AppAccessRole,
+  method: string,
+  path: string,
+): boolean => {
+  if (path === "/healthz" && method === "GET") return true;
+  if (role === "reporter") {
+    return (
+      (method === "POST" && path === "/submissions") ||
+      (method === "GET" && path === "/transit/matches")
+    );
+  }
+  return method === "GET" && path === "/submissions";
+};
 
 export const requireAppAccess: RequestHandler = (req, res, next) => {
   if (req.path === "/healthz") {
@@ -66,10 +122,15 @@ export const requireAppAccess: RequestHandler = (req, res, next) => {
     return;
   }
 
-  if (hasValidAccessCookie(req.cookies?.[ACCESS_COOKIE_NAME], config.sessionSecret)) {
-    next();
+  const role = getAccessSessionRole(req.cookies?.[ACCESS_COOKIE_NAME], config);
+  if (!role) {
+    res.status(401).json({ error: "Enter the access code for this app section." });
     return;
   }
 
-  res.status(401).json({ error: "Enter the app access code to continue." });
+  if (!canAccessRoute(role, req.method, req.path)) {
+    res.status(403).json({ error: "This access code does not allow this action." });
+    return;
+  }
+  next();
 };
