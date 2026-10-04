@@ -26,5 +26,4 @@ export interface RiderSubmissionInput {
   routeId?: string;
   /** @maxLength 100 */
   stopId?: string;
-  inputIsSynthetic?: boolean;
 }

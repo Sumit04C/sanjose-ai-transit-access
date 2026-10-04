@@ -4,10 +4,11 @@ import type { RequestHandler } from "express";
 export const ACCESS_COOKIE_NAME = "transit_report_access";
 export const ACCESS_SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 
-export type AppAccessRole = "reporter" | "reviewer";
+export type AppAccessRole = "reporter" | "reviewer" | "classroom";
 export type AppAccessConfig = {
   reporterPasscode: string;
   reviewerPasscode: string | null;
+  classroomPasscode: string | null;
   sessionSecret: string;
 };
 
@@ -25,8 +26,15 @@ export function getAppAccessConfig(): AppAccessConfig | null {
     configuredReviewerPasscode !== reporterPasscode
       ? configuredReviewerPasscode
       : null;
+  const configuredClassroomPasscode = process.env.TRANSIT_REPORT_CLASSROOM_PASSCODE;
+  const classroomPasscode =
+    isFourDigitCode(configuredClassroomPasscode) &&
+    configuredClassroomPasscode !== reporterPasscode &&
+    configuredClassroomPasscode !== reviewerPasscode
+      ? configuredClassroomPasscode
+      : null;
 
-  return { reporterPasscode, reviewerPasscode, sessionSecret };
+  return { reporterPasscode, reviewerPasscode, classroomPasscode, sessionSecret };
 }
 
 function hmac(value: string, sessionSecret: string): Buffer {
@@ -34,7 +42,9 @@ function hmac(value: string, sessionSecret: string): Buffer {
 }
 
 function roleCode(config: AppAccessConfig, role: AppAccessRole): string | null {
-  return role === "reporter" ? config.reporterPasscode : config.reviewerPasscode;
+  if (role === "reporter") return config.reporterPasscode;
+  if (role === "reviewer") return config.reviewerPasscode;
+  return config.classroomPasscode;
 }
 
 export function createAccessCookieValue(
@@ -77,7 +87,11 @@ export function getAccessSessionRole(
       : null;
   }
 
-  if (roleOrSignature !== "reporter" && roleOrSignature !== "reviewer") return null;
+  if (
+    roleOrSignature !== "reporter" &&
+    roleOrSignature !== "reviewer" &&
+    roleOrSignature !== "classroom"
+  ) return null;
   const role = roleOrSignature;
   const code = roleCode(config, role);
   if (!code || !tag || !signature) return null;
@@ -101,7 +115,7 @@ export const canAccessRoute = (
   path: string,
 ): boolean => {
   if (path === "/healthz" && method === "GET") return true;
-  if (role === "reporter") {
+  if (role === "reporter" || role === "classroom") {
     return (
       (method === "POST" && path === "/submissions") ||
       (method === "POST" && path === "/transit/request") ||
@@ -137,5 +151,6 @@ export const requireAppAccess: RequestHandler = (req, res, next) => {
     res.status(403).json({ error: "This access code does not allow this action." });
     return;
   }
+  res.locals.accessRole = role;
   next();
 };

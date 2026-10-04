@@ -12,4 +12,5 @@ export type AccessCodeInputRole = typeof AccessCodeInputRole[keyof typeof Access
 export const AccessCodeInputRole = {
   reporter: 'reporter',
   reviewer: 'reviewer',
+  classroom: 'classroom',
 } as const;

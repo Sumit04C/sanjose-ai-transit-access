@@ -408,7 +408,6 @@ components:
         stop: { type: string, maxLength: 200 }
         routeId: { type: string, maxLength: 100 }
         stopId: { type: string, maxLength: 100 }
-        inputIsSynthetic: { type: boolean }
       required: [description, language, imageName]
     RiderSubmission:
       type: object
@@ -477,7 +476,7 @@ components:
           pattern: "^[0-9]{4}$"
         role:
           type: string
-          enum: [reporter, reviewer]
+          enum: [reporter, reviewer, classroom]
           default: reporter
       required: [passcode]
     AccessStatus:
@@ -487,10 +486,12 @@ components:
           type: boolean
         role:
           type: [string, "null"]
-          enum: [reporter, reviewer, null]
+          enum: [reporter, reviewer, classroom, null]
         reviewerAvailable:
           type: boolean
-      required: [unlocked, role, reviewerAvailable]
+        classroomAvailable:
+          type: boolean
+      required: [unlocked, role, reviewerAvailable, classroomAvailable]
     ReportStatus:
       type: string
       enum: [submitted, reviewing, assigned, resolved]

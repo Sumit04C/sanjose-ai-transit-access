@@ -14,6 +14,7 @@ const server = spawn(process.execPath, ["dist/index.mjs"], {
     ...process.env, PORT: String(port), NODE_ENV: "production",
     TRANSIT_REPORT_PASSCODE: "1357", SESSION_SECRET: "isolated-transit-test-only",
     TRANSIT_REPORT_REVIEW_PASSCODE: "2468",
+    TRANSIT_REPORT_CLASSROOM_PASSCODE: "9753",
   },
   stdio: "ignore",
 });
@@ -45,6 +46,16 @@ try {
   });
   assert.equal(reviewerUnlock.status, 200);
   const reviewerHeaders = { cookie: reviewerUnlock.headers.get("set-cookie").split(";")[0], "content-type": "application/json" };
+  const classroomUnlock = await fetch(`${base}/access/unlock`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ passcode: "9753", role: "classroom" }),
+  });
+  assert.equal(classroomUnlock.status, 200);
+  const classroomHeaders = { cookie: classroomUnlock.headers.get("set-cookie").split(";")[0], "content-type": "application/json" };
+  const classroomStatus = await (await fetch(`${base}/access/status`, { headers: classroomHeaders })).json();
+  assert.equal(classroomStatus.role, "classroom");
+  assert.equal(classroomStatus.classroomAvailable, true);
+  assert.equal((await fetch(`${base}/submissions`, { headers: classroomHeaders })).status, 403);
   const match = await fetch(`${base}/transit/matches?route=60&stop=Santa%20Clara%20Transit%20Center%20%28Bay%201%29`, { headers });
   assert.equal(match.status, 200);
   const matches = await match.json();
@@ -55,17 +66,20 @@ try {
   const response = await fetch(`${base}/submissions`, {
     method: "POST", headers,
     body: JSON.stringify({
-      description: `[242] Classroom test ${marker}: I waited for route 60 at Santa Clara Transit Center (Bay 1).`,
+      description: `The stop sign says [242], and route 60 was late. ${marker}`,
       language: "en", imageName: null, issueCategory: "delay",
-      route: "60", stop: "Santa Clara Transit Center (Bay 1)", inputIsSynthetic: false,
+      route: "60", stop: "Santa Clara Transit Center (Bay 1)", inputIsSynthetic: true,
+      dataSource: "synthetic data", inputSource: "synthetic classroom test",
       routeId: matches.routes[0].id, stopId: matches.stops[0].id,
     }),
   });
   assert.equal(response.status, 201);
   const first = await response.json();
   created.push(first.id);
-  assert.equal(first.inputIsSynthetic, true);
-  assert.equal(first.inputSource, "synthetic classroom test");
+  assert.equal(first.inputIsSynthetic, false, "A reporter cannot mark an input synthetic");
+  assert.equal(first.dataSource, "real document");
+  assert.equal(first.inputSource, "rider-submitted input");
+  assert.match(first.description, /\[242\]/, "The marker remains ordinary stored text");
   assert.equal(first.issueCategory, "delay");
   assert.equal(first.vtaOpenDataUsed, true, "Verified VTA dataset should supply historical context");
   assert.equal(first.vtaOpenDataDatasetTitle, "VTA Stops And Routes October 2025");
@@ -81,20 +95,26 @@ try {
   assert.ok(["available", "empty"].includes(first.liveArrivalSnapshot.status));
 
   const imageResponse = await fetch(`${base}/submissions`, {
-    method: "POST", headers,
-    body: JSON.stringify({ description: "", language: "vi", imageName: `${marker}.png` }),
+    method: "POST", headers: classroomHeaders,
+    body: JSON.stringify({
+      description: "", language: "vi", imageName: `${marker}.png`,
+      issueCategory: "accessibility", inputIsSynthetic: false, dataSource: "real document",
+    }),
   });
   assert.equal(imageResponse.status, 201, "Route/stop must remain optional and image-only reports allowed");
   const second = await imageResponse.json();
   created.push(second.id);
   assert.equal(second.route, "");
   assert.equal(second.stop, "");
-  assert.equal(second.inputIsSynthetic, false);
+  assert.equal(second.inputIsSynthetic, true, "The authenticated classroom role is assigned synthetic status by the server");
+  assert.equal(second.dataSource, "synthetic data");
+  assert.equal(second.inputSource, "synthetic classroom test");
   assert.equal(second.imageName, `${marker}.png`);
   assert.equal(Object.hasOwn(second, "imageData"), false);
 
   const history = await (await fetch(`${base}/submissions`, { headers: reviewerHeaders })).json();
   assert.ok(history.findIndex((row) => row.id === second.id) < history.findIndex((row) => row.id === first.id));
+  assert.ok(history.some((row) => row.id === second.id), "Staff history includes classroom records");
   assert.equal(first.staffResponseSent, false, "An automated answer is not a staff reply");
   const statusUrl = `${base}/submissions/${first.id}/response-status`;
   assert.equal((await fetch(statusUrl, { method: "PATCH", headers, body: JSON.stringify({ staffResponseSent: true }) })).status, 403);
@@ -112,7 +132,8 @@ try {
   assert.deepEqual(saved.vtaOpenDataSnapshot, first.vtaOpenDataSnapshot);
   assert.equal(saved.assistantResponse, first.assistantResponse);
   process.stdout.write(JSON.stringify({
-    result: "passed", syntheticMarkerDetection: true, optionalFieldsAndImageOnly: true,
+    result: "passed", serverAssignedClassroomStatus: true, userMarkerAndClientFlagIgnored: true,
+    optionalFieldsAndImageOnly: true,
     snapshotPersistence: true, newestFirst: true, accessProtected: true,
     aiResponseKind: first.responseKind, sfBay511DataUsed: first.sfBay511DataUsed,
     aiResponseExcerpt: first.assistantResponse,

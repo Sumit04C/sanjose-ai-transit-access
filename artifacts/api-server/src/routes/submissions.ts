@@ -13,6 +13,7 @@ import { submissionsTable, type Submission, type submissionLanguages } from "@wo
 import { lookupTransit } from "../lib/transit-provider";
 import { generateGroundedResponse } from "../lib/grounded-response";
 import { classifyInputIntent } from "../lib/transit-intent";
+import type { AppAccessRole } from "../lib/access-session";
 
 const router: IRouter = Router();
 
@@ -78,7 +79,7 @@ router.post("/submissions", async (req, res): Promise<void> => {
   }
 
   try {
-    const inputIsSynthetic = parsed.data.inputIsSynthetic === true || description.includes("[242]");
+    const inputIsSynthetic = (res.locals.accessRole as AppAccessRole | undefined) === "classroom";
     const route = parsed.data.route?.trim() ?? "";
     const stop = parsed.data.stop?.trim() ?? "";
     const issueCategory = parsed.data.issueCategory ?? "other";

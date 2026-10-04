@@ -12,6 +12,7 @@ export type ReportFilters = {
 type FilterableReport = {
   reference: string;
   language: string;
+  issueCategory?: string | null;
   inputIsSynthetic?: boolean | null;
   inputSource?: string | null;
   description?: string | null;
@@ -34,11 +35,14 @@ export function filterReports<T extends FilterableReport>(
     if (filters.source === "511" && report.sfBay511DataUsed !== true) return false;
     if (filters.source === "ai" && report.responseKind !== "ai_generated") return false;
     if (filters.source === "rider") {
-      const isSynthetic =
-        report.inputIsSynthetic === true ||
-        report.description?.includes("[242]") === true ||
-        report.dataSource === "synthetic data";
-      if (isSynthetic || report.inputSource !== "rider-submitted input") return false;
+      const safetyOrAccessibility =
+        report.issueCategory === "safety" || report.issueCategory === "accessibility";
+      if (!safetyOrAccessibility) {
+        const isSynthetic =
+          report.inputIsSynthetic === true ||
+          report.dataSource === "synthetic data";
+        if (isSynthetic || report.inputSource !== "rider-submitted input") return false;
+      }
     }
     return true;
   });

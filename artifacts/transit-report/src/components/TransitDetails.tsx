@@ -135,7 +135,7 @@ function SnapshotList({ snapshot, kind, language }: { snapshot: unknown; kind: '
 export default function TransitDetails({ submission, language }: { submission: RiderSubmission; language: Language }) {
   const record = submission as TransitRecord;
   const t = labels[language];
-  const isSynthetic = record.inputIsSynthetic === true || record.description.includes('[242]') || record.dataSource === 'synthetic data';
+  const isSynthetic = record.inputIsSynthetic === true || record.dataSource === 'synthetic data';
   const responseKind = record.responseKind ?? 'legacy_fixed';
   const responseLabel = responseKind === 'ai_generated' ? t.ai : responseKind === 'context_only' ? t.context : t.legacy;
   const inputSource = text(record.inputSource)?.toLowerCase();

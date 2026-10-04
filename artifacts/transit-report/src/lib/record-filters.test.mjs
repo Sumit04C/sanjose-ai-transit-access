@@ -6,7 +6,7 @@ const reports = [
   {
     reference: "VTA-C2E03404", language: "en", inputIsSynthetic: false,
     inputSource: "rider-submitted input", sfBay511DataUsed: true,
-    responseKind: "ai_generated", staffResponseSent: true, description: "The bus was crowded.",
+    responseKind: "ai_generated", staffResponseSent: true, description: "The bus had [242] printed on its stop sign and was crowded.",
   },
   {
     reference: "VTA-B2420100", language: "vi", inputIsSynthetic: true,
@@ -49,4 +49,20 @@ test("staff response status is separate from an automated response and combines 
   assert.deepEqual(filterReports(reports, { ...filter(), responseStatus: "responded" }), [reports[0]]);
   assert.deepEqual(filterReports(reports, { ...filter(), responseStatus: "not_responded" }), reports.slice(1));
   assert.deepEqual(filterReports(reports, { ...filter("", "ai", "vi"), responseStatus: "not_responded" }), [reports[1]]);
+});
+
+test("safety and accessibility reports remain visible in the rider filter despite synthetic markers", () => {
+  const priorityReports = [
+    {
+      reference: "VTA-SAFETY1", language: "en", issueCategory: "safety",
+      inputIsSynthetic: true, inputSource: "rider-submitted input",
+      dataSource: "synthetic data", description: "A rider reports a broken station exit light.",
+    },
+    {
+      reference: "VTA-ACCESS1", language: "en", issueCategory: "accessibility",
+      inputIsSynthetic: false, inputSource: "rider-submitted input",
+      dataSource: "synthetic data", description: "A rider reports a blocked wheelchair ramp.",
+    },
+  ];
+  assert.deepEqual(filterReports(priorityReports, filter("", "rider")), priorityReports);
 });

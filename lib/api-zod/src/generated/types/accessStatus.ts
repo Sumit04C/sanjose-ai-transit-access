@@ -12,4 +12,5 @@ export interface AccessStatus {
   /** @nullable */
   role: AccessStatusRole;
   reviewerAvailable: boolean;
+  classroomAvailable: boolean;
 }

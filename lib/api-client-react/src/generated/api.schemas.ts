@@ -144,7 +144,6 @@ export interface RiderSubmissionInput {
   routeId?: string;
   /** @maxLength 100 */
   stopId?: string;
-  inputIsSynthetic?: boolean;
 }
 
 export type RiderSubmissionResponseKind = typeof RiderSubmissionResponseKind[keyof typeof RiderSubmissionResponseKind];
@@ -212,6 +211,7 @@ export type AccessCodeInputRole = typeof AccessCodeInputRole[keyof typeof Access
 export const AccessCodeInputRole = {
   reporter: 'reporter',
   reviewer: 'reviewer',
+  classroom: 'classroom',
 } as const;
 
 export interface AccessCodeInput {
@@ -229,6 +229,7 @@ export type AccessStatusRole = typeof AccessStatusRole[keyof typeof AccessStatus
 export const AccessStatusRole = {
   reporter: 'reporter',
   reviewer: 'reviewer',
+  classroom: 'classroom',
 } as const;
 
 export interface AccessStatus {
@@ -236,6 +237,7 @@ export interface AccessStatus {
   /** @nullable */
   role: AccessStatusRole;
   reviewerAvailable: boolean;
+  classroomAvailable: boolean;
 }
 
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];

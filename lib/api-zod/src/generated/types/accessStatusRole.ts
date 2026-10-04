@@ -15,4 +15,5 @@ export type AccessStatusRole = typeof AccessStatusRole[keyof typeof AccessStatus
 export const AccessStatusRole = {
   reporter: 'reporter',
   reviewer: 'reviewer',
+  classroom: 'classroom',
 } as const;

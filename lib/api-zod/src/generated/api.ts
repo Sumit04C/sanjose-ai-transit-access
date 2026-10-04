@@ -22,8 +22,9 @@ export const HealthCheckResponse = zod.object({
  */
 export const GetAccessStatusResponse = zod.object({
   "unlocked": zod.boolean(),
-  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal(null)]).nullable(),
-  "reviewerAvailable": zod.boolean()
+  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal('classroom'),zod.literal(null)]).nullable(),
+  "reviewerAvailable": zod.boolean(),
+  "classroomAvailable": zod.boolean()
 })
 
 
@@ -35,13 +36,14 @@ export const unlockAccessBodyRoleDefault = `reporter`;
 
 export const UnlockAccessBody = zod.object({
   "passcode": zod.string().regex(unlockAccessBodyPasscodeRegExp),
-  "role": zod.enum(['reporter', 'reviewer']).default(unlockAccessBodyRoleDefault)
+  "role": zod.enum(['reporter', 'reviewer', 'classroom']).default(unlockAccessBodyRoleDefault)
 })
 
 export const UnlockAccessResponse = zod.object({
   "unlocked": zod.boolean(),
-  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal(null)]).nullable(),
-  "reviewerAvailable": zod.boolean()
+  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal('classroom'),zod.literal(null)]).nullable(),
+  "reviewerAvailable": zod.boolean(),
+  "classroomAvailable": zod.boolean()
 })
 
 
@@ -50,8 +52,9 @@ export const UnlockAccessResponse = zod.object({
  */
 export const LogoutAccessResponse = zod.object({
   "unlocked": zod.boolean(),
-  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal(null)]).nullable(),
-  "reviewerAvailable": zod.boolean()
+  "role": zod.union([zod.literal('reporter'),zod.literal('reviewer'),zod.literal('classroom'),zod.literal(null)]).nullable(),
+  "reviewerAvailable": zod.boolean(),
+  "classroomAvailable": zod.boolean()
 })
 
 
@@ -300,8 +303,7 @@ export const CreateSubmissionBody = zod.object({
   "route": zod.string().max(createSubmissionBodyRouteMax).optional(),
   "stop": zod.string().max(createSubmissionBodyStopMax).optional(),
   "routeId": zod.string().max(createSubmissionBodyRouteIdMax).optional(),
-  "stopId": zod.string().max(createSubmissionBodyStopIdMax).optional(),
-  "inputIsSynthetic": zod.boolean().optional()
+  "stopId": zod.string().max(createSubmissionBodyStopIdMax).optional()
 })
 
 export const CreateSubmissionResponse = zod.object({

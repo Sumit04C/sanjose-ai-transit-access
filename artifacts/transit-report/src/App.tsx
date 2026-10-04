@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 export type Language = 'vi' | 'en' | 'es' | 'pa';
-type AccessRole = 'reporter' | 'reviewer';
+type AccessRole = 'reporter' | 'reviewer' | 'classroom';
 
 const queryClient = new QueryClient();
 
@@ -140,9 +140,6 @@ const copy = {
     stopLabel: 'Điểm dừng (không bắt buộc)',
     findMatches: 'Tìm tuyến / điểm dừng',
     findMatchesLoading: 'Đang tìm…',
-    syntheticLabel: 'Đây là báo cáo thử nghiệm trong lớp học',
-    syntheticHint: 'Các báo cáo thử nghiệm vẫn có thể hiển thị dữ liệu nguồn giao thông.',
-    syntheticTokenHint: 'Mô tả có [242] nên báo cáo được tự động đánh dấu là dữ liệu tổng hợp.',
     routeCandidate: 'Chọn tuyến khớp',
     stopCandidate: 'Chọn điểm dừng khớp',
     unmatched: 'Việc đối chiếu tuyến / điểm dừng là tùy chọn. Nếu không chọn kết quả, thông tin đã nhập có thể chưa được đối chiếu.',
@@ -211,9 +208,6 @@ const copy = {
     stopLabel: 'Stop (optional)',
     findMatches: 'Find route / stop',
     findMatchesLoading: 'Searching…',
-    syntheticLabel: 'This is a synthetic classroom test report',
-    syntheticHint: 'Test reports may still display transit source data.',
-    syntheticTokenHint: 'A description containing [242] is automatically marked synthetic.',
     routeCandidate: 'Select matching route',
     stopCandidate: 'Select matching stop',
     unmatched: 'Route / stop matching is optional. If you do not select a candidate, the entered details may remain unmatched.',
@@ -282,9 +276,6 @@ const copy = {
     stopLabel: 'Parada (opcional)',
     findMatches: 'Buscar ruta / parada',
     findMatchesLoading: 'Buscando…',
-    syntheticLabel: 'Este es un reporte sintético de prueba de clase',
-    syntheticHint: 'Los reportes de prueba también pueden mostrar datos de fuentes de transporte.',
-    syntheticTokenHint: 'Si la descripción contiene [242], el reporte se marca automáticamente como sintético.',
     routeCandidate: 'Elegir ruta coincidente',
     stopCandidate: 'Elegir parada coincidente',
     unmatched: 'La asociación de ruta / parada es opcional. Si no elige un resultado, los datos ingresados podrían quedar sin asociar.',
@@ -353,9 +344,6 @@ const copy = {
     stopLabel: 'ਸਟਾਪ (ਵਿਕਲਪਿਕ)',
     findMatches: 'ਰੂਟ / ਸਟਾਪ ਲੱਭੋ',
     findMatchesLoading: 'ਲੱਭ ਰਿਹਾ ਹੈ…',
-    syntheticLabel: 'ਇਹ ਕਲਾਸਰੂਮ ਦਾ ਸਿੰਥੈਟਿਕ ਟੈਸਟ ਰਿਪੋਰਟ ਹੈ',
-    syntheticHint: 'ਟੈਸਟ ਰਿਪੋਰਟਾਂ ਨਾਲ ਵੀ ਟ੍ਰਾਂਜ਼ਿਟ ਸਰੋਤ ਡੇਟਾ ਦਿਖ ਸਕਦਾ ਹੈ।',
-    syntheticTokenHint: 'ਵੇਰਵੇ ਵਿੱਚ [242] ਹੋਣ ਤੇ ਰਿਪੋਰਟ ਆਪਣੇ ਆਪ ਸਿੰਥੈਟਿਕ ਵਜੋਂ ਦਰਜ ਹੁੰਦੀ ਹੈ।',
     routeCandidate: 'ਮਿਲਦਾ ਰੂਟ ਚੁਣੋ',
     stopCandidate: 'ਮਿਲਦਾ ਸਟਾਪ ਚੁਣੋ',
     unmatched: 'ਰੂਟ / ਸਟਾਪ ਦਾ ਮਿਲਾਣ ਵਿਕਲਪਿਕ ਹੈ। ਜੇ ਤੁਸੀਂ ਨਤੀਜਾ ਨਹੀਂ ਚੁਣਦੇ, ਤਾਂ ਦਿੱਤੀ ਜਾਣਕਾਰੀ ਬਿਨਾਂ ਮਿਲਾਣ ਰਹਿ ਸਕਦੀ ਹੈ।',
@@ -371,6 +359,8 @@ const accessCopy: Record<Language, {
   reporterMode: string;
   reviewerMode: string;
   reviewerUnavailable: string;
+  classroomMode: string;
+  classroomUnavailable: string;
   submit: string;
   checking: string;
   error: string;
@@ -379,11 +369,13 @@ const accessCopy: Record<Language, {
 }> = {
   vi: {
     title: 'Nhập mã truy cập',
-    description: 'Chọn mã dành cho người gửi báo cáo hoặc người xem các báo cáo đã lưu.',
+    description: 'Chọn mã dành cho người gửi báo cáo, lớp học/kiểm thử hoặc người xem báo cáo đã lưu.',
     label: 'Mã truy cập gồm bốn chữ số',
     reporterMode: 'Gửi báo cáo vấn đề',
     reviewerMode: 'Xem báo cáo đã lưu',
     reviewerUnavailable: 'Mã xem báo cáo chưa được thiết lập.',
+    classroomMode: 'Chế độ lớp học / kiểm thử',
+    classroomUnavailable: 'Mã truy cập lớp học/kiểm thử chưa được thiết lập.',
     submit: 'Mở ứng dụng',
     checking: 'Đang kiểm tra quyền truy cập…',
     error: 'Mã không đúng hoặc đã vượt quá số lần thử. Vui lòng thử lại sau.',
@@ -392,11 +384,13 @@ const accessCopy: Record<Language, {
   },
   en: {
     title: 'Enter the access code',
-    description: 'Choose the code for submitting a report or viewing saved reports.',
+    description: 'Choose the code for submitting a report, classroom testing, or viewing saved reports.',
     label: 'Four-digit access code',
     reporterMode: 'Report an issue',
     reviewerMode: 'View saved reports',
     reviewerUnavailable: 'The saved-reports access code has not been configured.',
+    classroomMode: 'Classroom / test mode',
+    classroomUnavailable: 'The classroom/test access code has not been configured.',
     submit: 'Unlock app',
     checking: 'Checking access…',
     error: 'The code was not accepted or attempts are temporarily limited. Try again later.',
@@ -405,11 +399,13 @@ const accessCopy: Record<Language, {
   },
   es: {
     title: 'Ingresa el código de acceso',
-    description: 'Elige el código para enviar un reporte o ver los reportes guardados.',
+    description: 'Elige el código para enviar un reporte, usar el modo de clase/pruebas o ver los reportes guardados.',
     label: 'Código de acceso de cuatro dígitos',
     reporterMode: 'Reportar un problema',
     reviewerMode: 'Ver reportes guardados',
     reviewerUnavailable: 'El código para ver los reportes guardados no está configurado.',
+    classroomMode: 'Modo de clase / pruebas',
+    classroomUnavailable: 'No se configuró el código de acceso para el modo de clase/pruebas.',
     submit: 'Desbloquear',
     checking: 'Verificando acceso…',
     error: 'No se aceptó el código o los intentos están limitados temporalmente. Inténtalo más tarde.',
@@ -418,11 +414,13 @@ const accessCopy: Record<Language, {
   },
   pa: {
     title: 'ਐਕਸੈੱਸ ਕੋਡ ਦਾਖ਼ਲ ਕਰੋ',
-    description: 'ਰਿਪੋਰਟ ਭੇਜਣ ਜਾਂ ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਦੇਖਣ ਲਈ ਕੋਡ ਚੁਣੋ।',
+    description: 'ਰਿਪੋਰਟ ਭੇਜਣ, ਕਲਾਸਰੂਮ/ਟੈਸਟ ਮੋਡ ਵਰਤਣ ਜਾਂ ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਦੇਖਣ ਲਈ ਕੋਡ ਚੁਣੋ।',
     label: 'ਚਾਰ ਅੰਕਾਂ ਵਾਲਾ ਐਕਸੈੱਸ ਕੋਡ',
     reporterMode: 'ਸਮੱਸਿਆ ਦੀ ਰਿਪੋਰਟ ਕਰੋ',
     reviewerMode: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਵੇਖੋ',
     reviewerUnavailable: 'ਸੰਭਾਲੀਆਂ ਰਿਪੋਰਟਾਂ ਲਈ ਐਕਸੈੱਸ ਕੋਡ ਸੈੱਟ ਨਹੀਂ ਕੀਤਾ ਗਿਆ।',
+    classroomMode: 'ਕਲਾਸਰੂਮ / ਟੈਸਟ ਮੋਡ',
+    classroomUnavailable: 'ਕਲਾਸਰੂਮ/ਟੈਸਟ ਲਈ ਐਕਸੈੱਸ ਕੋਡ ਸੈੱਟ ਨਹੀਂ ਕੀਤਾ ਗਿਆ।',
     submit: 'ਐਪ ਖੋਲ੍ਹੋ',
     checking: 'ਐਕਸੈੱਸ ਦੀ ਜਾਂਚ ਹੋ ਰਹੀ ਹੈ…',
     error: 'ਕੋਡ ਸਵੀਕਾਰ ਨਹੀਂ ਹੋਇਆ ਜਾਂ ਕੋਸ਼ਿਸ਼ਾਂ ਅਸਥਾਈ ਤੌਰ ਤੇ ਸੀਮਿਤ ਹਨ। ਬਾਅਦ ਵਿੱਚ ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',
@@ -434,12 +432,14 @@ const accessCopy: Record<Language, {
 function AccessGate({
   language,
   reviewerAvailable,
+  classroomAvailable,
   unavailable = false,
   onUnlocked,
   onRetry,
 }: {
   language: Language;
   reviewerAvailable: boolean;
+  classroomAvailable: boolean;
   unavailable?: boolean;
   onUnlocked: (role: AccessRole) => void;
   onRetry: () => void;
@@ -500,10 +500,11 @@ function AccessGate({
       </div>
       <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
       <p className="mt-3 text-sm leading-6 text-[hsl(var(--muted-foreground))]">{t.description}</p>
-      <div className="mt-6 grid gap-2 sm:grid-cols-2" role="group" aria-label={t.description}>
+      <div className="mt-6 grid gap-2 sm:grid-cols-3" role="group" aria-label={t.description}>
         {([
           ['reporter', t.reporterMode, true],
           ['reviewer', t.reviewerMode, reviewerAvailable],
+          ['classroom', t.classroomMode, classroomAvailable],
         ] as const).map(([role, label, enabled]) => (
           <button
             key={role}
@@ -525,6 +526,11 @@ function AccessGate({
       {!reviewerAvailable && (
         <p className="mt-2 text-xs leading-5 text-[hsl(var(--muted-foreground))]" role="status">
           {t.reviewerUnavailable}
+        </p>
+      )}
+      {!classroomAvailable && (
+        <p className="mt-2 text-xs leading-5 text-[hsl(var(--muted-foreground))]" role="status">
+          {t.classroomUnavailable}
         </p>
       )}
       <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
@@ -675,11 +681,20 @@ function AttachmentPreview({
   );
 }
 
+const classroomModeNotice: Record<Language, string> = {
+  vi: 'Chế độ lớp học/kiểm thử đang bật. Máy chủ sẽ đánh dấu báo cáo này là dữ liệu tổng hợp.',
+  en: 'Classroom/test mode is active. The server will mark this report as synthetic data.',
+  es: 'El modo de clase/pruebas está activo. El servidor marcará este reporte como dato sintético.',
+  pa: 'ਕਲਾਸਰੂਮ/ਟੈਸਟ ਮੋਡ ਚਾਲੂ ਹੈ। ਸਰਵਰ ਇਸ ਰਿਪੋਰਟ ਨੂੰ ਸਿੰਥੈਟਿਕ ਡੇਟਾ ਵਜੋਂ ਦਰਜ ਕਰੇਗਾ।',
+};
+
 function ReportForm({
   language,
+  classroomMode,
   onSubmitted,
 }: {
   language: Language;
+  classroomMode: boolean;
   onSubmitted: (report: RiderSubmission, image: ImageAttachment | null) => void;
 }) {
   const t = copy[language];
@@ -702,7 +717,6 @@ function ReportForm({
   const [stop, setStop] = useState('');
   const [routeId, setRouteId] = useState('');
   const [stopId, setStopId] = useState('');
-  const [inputIsSynthetic, setInputIsSynthetic] = useState(false);
   const [searchedFor, setSearchedFor] = useState<{ route: string; stop: string } | null>(null);
   const [matchError, setMatchError] = useState(false);
   const [error, setError] = useState('');
@@ -832,7 +846,6 @@ function ReportForm({
         stop: stop.trim() || undefined,
         routeId: routeId || undefined,
         stopId: stopId || undefined,
-        inputIsSynthetic: inputIsSynthetic || description.includes('[242]'),
       } },
       {
         onSuccess: (report) => {
@@ -847,6 +860,11 @@ function ReportForm({
 
   return (
     <form onSubmit={submit} className="space-y-6" noValidate>
+      {classroomMode && (
+        <p className="rounded-xl border border-[hsl(var(--accent)/.75)] bg-[hsl(var(--secondary))] p-4 text-sm font-semibold leading-6 text-[hsl(var(--primary))]" role="note" data-testid="notice-classroom-mode">
+          {classroomModeNotice[language]}
+        </p>
+      )}
       <section className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:rounded-[26px] sm:p-8">
         <div className="mb-5 flex items-start gap-3 sm:mb-7 sm:gap-4">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
@@ -897,19 +915,14 @@ function ReportForm({
       </section>
 
       <section className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-[0_14px_32px_hsl(216_61%_20%/.06)] sm:rounded-[26px] sm:p-6">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           <label className="block text-sm font-semibold">
             {t.issueCategory}
             <select value={issueCategory} onChange={(event) => setIssueCategory(event.target.value as typeof issueCategory)} className="focus-ring mt-2 min-h-11 w-full rounded-xl border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 text-sm">
               {(Object.keys(t.categories) as Array<keyof typeof t.categories>).map((category) => <option key={category} value={category}>{t.categories[category]}</option>)}
             </select>
           </label>
-          <div className="flex items-center gap-3 rounded-xl bg-[hsl(var(--secondary)/.55)] p-3">
-            <input id="synthetic-report" type="checkbox" checked={inputIsSynthetic || description.includes('[242]')} onChange={(event) => setInputIsSynthetic(event.target.checked)} className="h-5 w-5 accent-[hsl(var(--primary))]" />
-            <label htmlFor="synthetic-report" className="text-sm font-semibold">{t.syntheticLabel}</label>
-          </div>
         </div>
-        <p className="mt-2 text-xs leading-5 text-[hsl(var(--muted-foreground))]">{t.syntheticHint} {t.syntheticTokenHint}</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-semibold">
             {t.routeLabel}
@@ -1123,7 +1136,7 @@ function TransitApp() {
 
   useEffect(() => {
     if (activeRole === 'reviewer' && location !== '/records') setLocation('/records');
-    if (activeRole === 'reporter' && location === '/records') setLocation('/');
+    if (activeRole && activeRole !== 'reviewer' && location === '/records') setLocation('/');
   }, [activeRole, location, setLocation]);
 
   const handleAccessChange = () => {
@@ -1165,6 +1178,7 @@ function TransitApp() {
           <AccessGate
             language={language}
             reviewerAvailable={accessStatus.data?.reviewerAvailable ?? false}
+            classroomAvailable={accessStatus.data?.classroomAvailable ?? false}
             unavailable={accessStatus.isError}
             onUnlocked={(role) => {
               setLocalRole(role);
@@ -1198,7 +1212,11 @@ function TransitApp() {
                       <h1 className="max-w-2xl text-4xl font-bold leading-[.98] tracking-[-.065em] sm:text-6xl" data-testid="text-page-title">{t.title}</h1>
                       <p className="mt-5 max-w-xl text-base leading-7 text-[hsl(var(--muted-foreground))]">{t.instruction}</p>
                     </div>
-                    <ReportForm language={language} onSubmitted={(report, image) => setSubmitted({ report, image })} />
+                    <ReportForm
+                      language={language}
+                      classroomMode={activeRole === 'classroom'}
+                      onSubmitted={(report, image) => setSubmitted({ report, image })}
+                    />
                   </>
                 ) : (
                   <SubmittedReport

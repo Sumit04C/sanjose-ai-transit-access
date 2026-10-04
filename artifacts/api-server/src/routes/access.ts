@@ -34,6 +34,7 @@ function getStatus(req: Request, config: AppAccessConfig) {
     unlocked: role !== null,
     role,
     reviewerAvailable: config.reviewerPasscode !== null,
+    classroomAvailable: config.classroomPasscode !== null,
   };
 }
 
@@ -91,8 +92,11 @@ router.post("/unlock", (req, res): void => {
   }
 
   const role = parsed.data.role ?? "reporter";
-  const expectedPasscode =
-    role === "reporter" ? config.reporterPasscode : config.reviewerPasscode;
+  const expectedPasscode = role === "reporter"
+    ? config.reporterPasscode
+    : role === "reviewer"
+      ? config.reviewerPasscode
+      : config.classroomPasscode;
   if (!expectedPasscode || !constantTimePasscodeMatch(parsed.data.passcode, expectedPasscode)) {
     failureWindow.failures += 1;
     res.status(failureWindow.failures >= MAX_FAILED_ATTEMPTS ? 429 : 401)
@@ -117,6 +121,7 @@ router.post("/unlock", (req, res): void => {
     unlocked: true,
     role,
     reviewerAvailable: config.reviewerPasscode !== null,
+    classroomAvailable: config.classroomPasscode !== null,
   }));
 });
 
@@ -131,6 +136,7 @@ router.post("/logout", (req, res): void => {
     unlocked: false,
     role: null,
     reviewerAvailable: config !== null && config.reviewerPasscode !== null,
+    classroomAvailable: config !== null && config.classroomPasscode !== null,
   }));
 });
 
