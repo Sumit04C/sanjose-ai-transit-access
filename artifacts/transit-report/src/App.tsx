@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Redirect, Route, Switch, useLocation } from 'wouter';
-import { getGetAccessStatusQueryKey, getGetTransitMatchesQueryKey, getListSubmissionsQueryKey, useCreateSubmission, useGetAccessStatus, useGetTransitMatches, useLogoutAccess, useUnlockAccess } from '@workspace/api-client-react';
+import { getGetAccessStatusQueryKey, getGetTransitMatchesQueryKey, getListSubmissionsQueryKey, useCreateSubmission, useClassifyTransitInput, useGetAccessStatus, useGetTransitMatches, useLogoutAccess, useUnlockAccess } from '@workspace/api-client-react';
 import type { RiderSubmission } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 import RecordsPage from '@/pages/records';
@@ -684,7 +684,18 @@ function ReportForm({
 }) {
   const t = copy[language];
   const createSubmission = useCreateSubmission();
+  const classify = useClassifyTransitInput();
+  const [lookupRequest, setLookupRequest] = useState(0);
+  const [lookupPending, setLookupPending] = useState(false);
   const [description, setDescription] = useState('');
+  const currentDescription = useRef(description);
+  currentDescription.current = description;
+  const routingCopy = {
+    en: { continue: 'Continue', hint: 'Transit questions are checked, not saved as reports.', error: 'Could not classify your message. Nothing was saved. Please try again.' },
+    vi: { continue: 'Tiếp tục', hint: 'Câu hỏi giao thông được tra cứu, không lưu thành báo cáo.', error: 'Không thể phân loại nội dung. Chưa lưu gì. Hãy thử lại.' },
+    es: { continue: 'Continuar', hint: 'Las consultas de transporte no se guardan como reportes.', error: 'No se pudo clasificar el mensaje. No se guardó nada. Inténtelo de nuevo.' },
+    pa: { continue: 'ਜਾਰੀ ਰੱਖੋ', hint: 'ਆਵਾਜਾਈ ਦੇ ਸਵਾਲ ਵੇਖੇ ਜਾਂਦੇ ਹਨ, ਰਿਪੋਰਟ ਵਜੋਂ ਸੰਭਾਲੇ ਨਹੀਂ ਜਾਂਦੇ।', error: 'ਸੁਨੇਹੇ ਦੀ ਕਿਸਮ ਨਹੀਂ ਪਛਾਣ ਸਕੇ। ਕੁਝ ਸੰਭਾਲਿਆ ਨਹੀਂ ਗਿਆ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।' },
+  }[language];
   const [image, setImage] = useState<ImageAttachment | null>(null);
   const [issueCategory, setIssueCategory] = useState<'delay' | 'cleanliness' | 'safety' | 'accessibility' | 'staff' | 'vehicle' | 'other'>('other');
   const [route, setRoute] = useState('');
@@ -790,12 +801,26 @@ function ReportForm({
     event.target.value = '';
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (classify.isPending || lookupPending || createSubmission.isPending) return;
     setError('');
     if (!description.trim() && !image) {
       setError(t.requiredError);
       return;
+    }
+    if (description.trim()) {
+      try {
+        const classification = await classify.mutateAsync({ data: { message: description.trim(), language } });
+        if (currentDescription.current !== description) return;
+        if (classification.intent === 'transit_lookup') {
+          setLookupRequest(value => value + 1);
+          return;
+        }
+      } catch {
+        setError(routingCopy.error);
+        return; // A failed classification must never silently save a question.
+      }
     }
     createSubmission.mutate(
       { data: {
@@ -867,7 +892,7 @@ function ReportForm({
             “{voiceTranscript}”
           </div>
         )}
-        <TransitQuestion message={description} language={language} />
+        <TransitQuestion message={description} language={language} requestTrigger={lookupRequest} onPendingChange={setLookupPending} />
         {voiceMessage && <p className="mt-3 text-sm leading-6 text-[hsl(var(--destructive))]" role="alert" data-testid="status-voice-message">{voiceMessage}</p>}
       </section>
 
@@ -962,15 +987,15 @@ function ReportForm({
 
       <button
         type="submit"
-        disabled={createSubmission.isPending}
+        disabled={createSubmission.isPending || classify.isPending || lookupPending}
         className="focus-ring flex min-h-[60px] w-full items-center justify-between gap-4 rounded-2xl bg-[hsl(var(--primary))] px-5 text-left text-[hsl(var(--primary-foreground))] shadow-[5px_5px_0_hsl(var(--accent))] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-75 sm:px-7"
         data-testid="button-submit-report"
       >
         <span>
-          <span className="block text-base font-bold">{createSubmission.isPending ? t.sending : t.send}</span>
-          <span className="mt-1 block text-xs text-[hsl(var(--primary-foreground)/.72)]">{t.sendHint}</span>
+          <span className="block text-base font-bold">{createSubmission.isPending ? t.sending : routingCopy.continue}</span>
+          <span className="mt-1 block text-xs text-[hsl(var(--primary-foreground)/.72)]">{routingCopy.hint}</span>
         </span>
-        {createSubmission.isPending ? <Loader2 size={23} className="animate-spin" /> : <Send size={22} />}
+        {createSubmission.isPending || classify.isPending || lookupPending ? <Loader2 size={23} className="animate-spin" /> : <Send size={22} />}
       </button>
     </form>
   );

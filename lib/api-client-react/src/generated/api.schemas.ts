@@ -5,6 +5,18 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type TransitInputClassificationIntent = typeof TransitInputClassificationIntent[keyof typeof TransitInputClassificationIntent];
+
+
+export const TransitInputClassificationIntent = {
+  transit_lookup: 'transit_lookup',
+  issue_report: 'issue_report',
+} as const;
+
+export interface TransitInputClassification {
+  intent: TransitInputClassificationIntent;
+}
+
 export interface SubmissionResponseStatus {
   staffResponseSent: boolean;
 }

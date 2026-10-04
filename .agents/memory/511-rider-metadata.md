@@ -8,6 +8,12 @@ Do not infer transit mode from the stop catalog's StopType. Resolve service mode
 
 **How to apply:** Keep all matching station platforms until verified journey/line data can distinguish bus from rail.
 
+Preserve primary-station versus numbered-bay name quality when ranking station aliases.
+
+**Why:** 511's Winchester rail entries are named “Winchester Station,” while nearby bus entries are “Winchester Station (Bay 1/2).” Stripping bay suffixes makes all names equal and can incorrectly turn a clear station query into a bus-versus-rail clarification.
+
+**How to apply:** Query the relevant candidates first. When stronger primary-station matches share one verified line mode, infer that mode; do not infer it from the misleading StopType or hardcode station IDs.
+
 Prefer the stop-specific DestinationDisplay or public VehicleJourneyName over DestinationName when displaying a direction.
 
 **Why:** Verified Green Line journeys named an internal pocket track marked “NOT A PUBLIC STOP” as their endpoint, while the public headsign correctly said “OLD IRONSIDES.”

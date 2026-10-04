@@ -12,6 +12,7 @@ import { db } from "@workspace/db";
 import { submissionsTable, type Submission, type submissionLanguages } from "@workspace/db/schema";
 import { lookupTransit } from "../lib/transit-provider";
 import { generateGroundedResponse } from "../lib/grounded-response";
+import { classifyInputIntent } from "../lib/transit-intent";
 
 const router: IRouter = Router();
 
@@ -68,6 +69,11 @@ router.post("/submissions", async (req, res): Promise<void> => {
   const description = parsed.data.description.trim();
   if (!description && !imageName) {
     res.status(400).json({ error: "A description or image is required" });
+    return;
+  }
+  // Enforce this before provider calls, AI generation, or any database write.
+  if (classifyInputIntent(description) === "transit_lookup") {
+    res.status(409).json({ error: "This is a transit lookup, not an issue report. Use the transit lookup flow.", intent: "transit_lookup" });
     return;
   }
 

@@ -1,5 +1,7 @@
 import type { TransitRequestInput, TransitRequestResult, TransitDeparture } from "@workspace/api-zod";
 import { getDeparturePayload, getTransitReference, type TransitEntity } from "./transit-provider";
+import { classifyInputIntent } from "./transit-intent";
+export { classifyInputIntent } from "./transit-intent";
 
 const TZ = "America/Los_Angeles";
 type Language = TransitRequestInput["language"];
@@ -29,7 +31,7 @@ export function localInstant(date: string, hour: number, minute: number, second 
 export function parseTransitMessage(message: string, now = Date.now()) {
   const p = localParts(now);
   const date = `${p.year}-${p.month}-${p.day}`;
-  const intent = /next|another\b|miss(?:ed)? (?:the )?(?:train|bus)|pr[oó]xim[oa]|siguiente|tiếp theo|ਅਗਲ/iu.test(message) ? "next_departure" : "other";
+  const intent = classifyInputIntent(message) === "transit_lookup" ? "next_departure" : "other";
   const mode = /light\s*rail|train|tram|metro|tren|tàu|ਰੇਲ/iu.test(message) ? "light_rail"
     : /bus|autob[uú]s|xe buýt|ਬੱਸ/iu.test(message) ? "bus" : null;
   const stationMatch = message.match(/(?:\bfrom|\bat|\bdesde|\ben|\btừ|\bở)\s+([^\d?.!,]+?)(?=\s+(?:was|when|is|were|estaba)\b|[?.!,]|$)/iu);
@@ -47,9 +49,10 @@ export function parseTransitMessage(message: string, now = Date.now()) {
     let hour = Number(clock[1]);
     const minute = Number(clock[2]);
     const meridiem = clock[3]?.toLowerCase().replace(/\./g, "");
-    timeAmbiguous = !meridiem && hour <= 12;
+    // Rider shorthand in this flow defaults to AM; explicit PM is preserved.
     if (minute < 60 && hour < 24 && (!meridiem || (hour >= 1 && hour <= 12))) {
       if (meridiem) hour = hour % 12 + (meridiem === "pm" ? 12 : 0);
+      else if (hour === 12) hour = 0;
       referenced_time = new Date(localInstant(date, hour, minute)).toISOString();
     } else timeAmbiguous = true;
   } else {
@@ -64,6 +67,17 @@ export function parseTransitMessage(message: string, now = Date.now()) {
 }
 
 type Departure = TransitDeparture & { stopId: string; lineId: string; directionRef: string };
+function routeMode(route: TransitEntity): string {
+  const mode = text(route.raw?.TransportMode);
+  return /metro|rail|tram/i.test(mode) ? "light_rail" : /bus/i.test(mode) ? "bus" : "unknown";
+}
+function countJourneyRows(value: unknown, source: "live" | "scheduled", depth = 0): number {
+  if (depth > 20 || !value || typeof value !== "object") return 0;
+  if (Array.isArray(value)) return value.reduce((total, v) => total + countJourneyRows(v, source, depth + 1), 0);
+  const node = obj(value);
+  if (node[source === "live" ? "MonitoredVehicleJourney" : "TargetedVehicleJourney"]) return 1;
+  return Object.values(node).reduce<number>((total, v) => total + countJourneyRows(v, source, depth + 1), 0);
+}
 export function decodeDepartures(value: unknown, stopId: string, routes: TransitEntity[], source: "live" | "scheduled", retrievedAt: string, operatorId: string, now = Date.now()): Departure[] {
   const results: Departure[] = [];
   const walk = (node: unknown, depth = 0): void => {
@@ -114,7 +128,7 @@ export function decodeDepartures(value: unknown, stopId: string, routes: Transit
 }
 
 const messages = {
-  en: { station: "Which station are you leaving from?", direction: "Which direction or service are you traveling on?", time: "Did you mean AM or PM? Please add it to your question.", unsupported: "Ask about the next bus or light rail departure, including the station name.", unavailable: "I couldn’t verify departures right now. No departure time has been estimated.", noDepartures: "No later departures were returned for this service today. This does not confirm a cancellation.", live: "Live VTA data", scheduled: "Realtime information is unavailable for this result; this is based on the schedule, not live vehicle data.", next: "Next departure", checked: "Last checked", toward: "toward", after: "after" },
+  en: { station: "Which station are you leaving from?", direction: "Which direction are you heading?", time: "Did you mean AM or PM? Please add it to your question.", unsupported: "Ask about the next bus or light rail departure, including the station name.", unavailable: "I couldn’t verify departures right now. No departure time has been estimated.", noDepartures: "No later departures were returned for this service today. This does not confirm a cancellation.", live: "Live VTA data", scheduled: "Realtime information is unavailable for this result; this is based on the schedule, not live vehicle data.", next: "Next departure", checked: "Last checked", toward: "toward", after: "after" },
   vi: { station: "Bạn khởi hành từ ga nào?", direction: "Bạn đi theo hướng hoặc tuyến nào?", time: "Bạn muốn nói giờ sáng hay chiều? Hãy thêm vào câu hỏi.", unsupported: "Hãy hỏi về chuyến xe buýt hoặc tàu tiếp theo và nêu tên ga.", unavailable: "Hiện không thể xác minh giờ khởi hành. Không có giờ nào được ước tính.", noDepartures: "Không tìm thấy chuyến muộn hơn của tuyến này hôm nay. Điều này không xác nhận chuyến bị hủy.", live: "Dữ liệu VTA trực tiếp", scheduled: "Không có dữ liệu trực tiếp cho kết quả này; đây là lịch trình, không phải dữ liệu xe trực tiếp.", next: "Chuyến tiếp theo", checked: "Kiểm tra lúc", toward: "hướng đến", after: "sau" },
   es: { station: "¿De qué estación sale?", direction: "¿En qué dirección o servicio viaja?", time: "¿Se refiere a AM o PM? Añádalo a su pregunta.", unsupported: "Pregunte por la próxima salida de autobús o tren ligero e incluya la estación.", unavailable: "No pude verificar las salidas ahora. No se ha estimado ninguna hora.", noDepartures: "No se devolvieron salidas posteriores para este servicio hoy. Esto no confirma una cancelación.", live: "Datos de VTA en vivo", scheduled: "No hay información en tiempo real para este resultado; se basa en el horario, no en datos del vehículo en vivo.", next: "Próxima salida", checked: "Última consulta", toward: "hacia", after: "después de" },
   pa: { station: "ਤੁਸੀਂ ਕਿਹੜੇ ਸਟੇਸ਼ਨ ਤੋਂ ਜਾ ਰਹੇ ਹੋ?", direction: "ਤੁਸੀਂ ਕਿਹੜੀ ਦਿਸ਼ਾ ਜਾਂ ਸੇਵਾ ਵਿੱਚ ਜਾ ਰਹੇ ਹੋ?", time: "ਕੀ ਤੁਹਾਡਾ ਮਤਲਬ AM ਜਾਂ PM ਹੈ? ਸਵਾਲ ਵਿੱਚ ਸ਼ਾਮਲ ਕਰੋ।", unsupported: "ਅਗਲੀ ਬੱਸ ਜਾਂ ਲਾਈਟ ਰੇਲ ਬਾਰੇ ਪੁੱਛੋ ਅਤੇ ਸਟੇਸ਼ਨ ਦਾ ਨਾਮ ਦਿਓ।", unavailable: "ਹੁਣ ਰਵਾਨਗੀ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਹੋ ਸਕੀ। ਕੋਈ ਸਮਾਂ ਅੰਦਾਜ਼ਾ ਨਹੀਂ ਲਗਾਇਆ ਗਿਆ।", noDepartures: "ਅੱਜ ਇਸ ਸੇਵਾ ਲਈ ਬਾਅਦ ਦੀ ਕੋਈ ਰਵਾਨਗੀ ਨਹੀਂ ਮਿਲੀ। ਇਹ ਰੱਦ ਹੋਣ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਹੈ।", live: "ਲਾਈਵ VTA ਡੇਟਾ", scheduled: "ਇਸ ਨਤੀਜੇ ਲਈ ਲਾਈਵ ਜਾਣਕਾਰੀ ਨਹੀਂ ਹੈ; ਇਹ ਸਮਾਂ-ਸਾਰਣੀ ਹੈ, ਲਾਈਵ ਵਾਹਨ ਡੇਟਾ ਨਹੀਂ।", next: "ਅਗਲੀ ਰਵਾਨਗੀ", checked: "ਆਖਰੀ ਜਾਂਚ", toward: "ਵੱਲ", after: "ਤੋਂ ਬਾਅਦ" },
@@ -129,10 +143,12 @@ export async function resolveRiderRequest(input: TransitRequestInput, dependenci
   const parsed = parseTransitMessage(input.message, now);
   const t = messages[input.language];
   const debug: Record<string, unknown> = {
+    detectedIntent: classifyInputIntent(input.message), detectedTransitMode: parsed.mode,
     extractedIntent: parsed.intent, extractedMode: parsed.mode, extractedStation: parsed.station_name, extractedRoute: parsed.route,
     extractedDirection: parsed.direction, referencedTime: parsed.referenced_time,
     requestedDepartureCount: parsed.requested_departure_count, date: parsed.date, timeZone: TZ,
-    resolvedStopIds: [], clarificationRequired: false, apiRequestStatus: {}, dataKind: "none", retrievalTimestamp: null,
+    resolvedStopIds: [], selectedStationId: null, stationSearchMatches: [], clarificationRequired: false,
+    apiRequestStatus: {}, liveApiRequestStatus: [], rawApiResultCount: 0, dataKind: "none", retrievalTimestamp: null,
   };
   const finish = (status: TransitRequestResult["status"], message: string, departures: TransitDeparture[] = [], choices: TransitRequestResult["choices"] = []): TransitRequestResult => {
     debug.clarificationRequired = status === "clarification";
@@ -150,20 +166,27 @@ export async function resolveRiderRequest(input: TransitRequestInput, dependenci
     query = mentioned[0] ?? "";
   }
   if (!query) return finish("clarification", t.station);
-  let stops = reference.stops.filter(s => wordsContain(alias(s.name), query));
+  debug.stationSearchPerformed = true;
+  debug.stationSearchText = query;
+  debug.apiRequestStatus = { reference: "available" };
+  let stops = reference.stops.filter(s => alias(s.name).includes(query));
   if (!stops.length) {
     const withinQuery = [...new Set(reference.stops.map(s => alias(s.name)))]
       .filter(a => a.length > 2 && wordsContain(query, a))
       .sort((a, b) => query.indexOf(a) - query.indexOf(b) || b.length - a.length);
     if (withinQuery.length) {
       query = withinQuery[0];
-      stops = reference.stops.filter(s => wordsContain(alias(s.name), query));
+      stops = reference.stops.filter(s => alias(s.name).includes(query));
     }
   }
-  const exact = stops.filter(s => alias(s.name) === query);
-  if (exact.length) stops = exact;
+  const ranked = stops.map(stop => ({ stop, score: (alias(stop.name) === query ? 100 : alias(stop.name).startsWith(query) ? 75 : 50)
+    + (/\bstation\b/i.test(stop.name) && !/\b(?:bay|platform)\b/i.test(stop.name) ? 20 : 0) }))
+    .sort((a, b) => b.score - a.score || a.stop.name.localeCompare(b.stop.name));
+  debug.stationSearchMatches = ranked.map(({ stop, score }) => ({ id: stop.id, name: stop.name, nameScore: score, transitModes: [], selected: false }));
+  const exact = ranked.filter(s => s.score >= 100);
+  if (exact.length && parsed.mode !== "bus") stops = exact.map(s => s.stop);
+  else stops = ranked.slice(0, 8).map(s => s.stop);
   if (!stops.length) return finish("clarification", t.station);
-  if (stops.length > 8) return finish("clarification", t.station);
   debug.extractedStation = parsed.station_name ?? stops[0].name;
   debug.resolvedStopIds = stops.map(s => s.id);
   const dayStart = localInstant(parsed.date, 0, 0);
@@ -179,8 +202,17 @@ export async function resolveRiderRequest(input: TransitRequestInput, dependenci
       try {
         const data = await deps.payload({ operatorId, stop, source, startTime, endTime });
         const decoded = decodeDepartures(data.value, stop.id, routes, source, data.retrievedAt, operatorId, now);
+        const rawCount = countJourneyRows(data.value, source);
+        debug.rawApiResultCount = Number(debug.rawApiResultCount) + rawCount;
+        const modes = [...new Set(decoded.map(row => routeMode(routes.find(r => r.id === row.lineId)!)))];
+        const matches = debug.stationSearchMatches as Array<{id: string; transitModes: string[]; modeScore?: number; selected: boolean}>;
+        const match = matches.find(m => m.id === stop.id);
+        if (match) {
+          match.transitModes = [...new Set([...match.transitModes, ...modes])];
+          match.modeScore = parsed.mode && match.transitModes.includes(parsed.mode) ? 100 : 0;
+        }
         statuses.push({ stopId: stop.id, httpStatus: data.httpStatus, status: decoded.length ? "available" : "empty",
-          retrievedAt: data.retrievedAt, acceptedDepartureRows: decoded.length });
+          retrievedAt: data.retrievedAt, rawApiResultCount: rawCount, acceptedDepartureRows: decoded.length });
         if (!debug.retrievalTimestamp || Date.parse(data.retrievedAt) > Date.parse(String(debug.retrievalTimestamp))) {
           debug.retrievalTimestamp = data.retrievedAt;
         }
@@ -189,6 +221,7 @@ export async function resolveRiderRequest(input: TransitRequestInput, dependenci
       } catch { statuses.push({ stopId: stop.id, httpStatus: null, status: "unavailable" }); return []; }
     }));
     requestStatus[source] = statuses;
+    if (source === "live") debug.liveApiRequestStatus = statuses;
     return rows.flat();
   };
   const schedule = await fetchForStops("scheduled", stops);
@@ -196,11 +229,27 @@ export async function resolveRiderRequest(input: TransitRequestInput, dependenci
   let serviceData = schedule;
   let observedOnly = false;
   if (!serviceData.length) { serviceData = await fetchForStops("live", stops); observedOnly = true; }
+  let effectiveMode = parsed.mode;
+  if (!effectiveMode && !parsed.route && serviceData.length) {
+    // Bare station names can refer to both a rail station and numbered bus bays.
+    // Infer only when the strongest name matches share one verified line mode.
+    const observed = ranked.filter(r => serviceData.some(d => d.stopId === r.stop.id));
+    const bestNameScore = Math.max(...observed.map(r => r.score));
+    const primaryIds = new Set(observed.filter(r => r.score === bestNameScore).map(r => r.stop.id));
+    const primaryModes = [...new Set(serviceData.filter(d => primaryIds.has(d.stopId))
+      .map(d => routeMode(routes.find(r => r.id === d.lineId)!)))];
+    if (primaryModes.length === 1 && (primaryModes[0] === "light_rail" || primaryModes[0] === "bus")) effectiveMode = primaryModes[0];
+  }
+  debug.detectedTransitMode = effectiveMode;
+  debug.extractedMode = effectiveMode;
+  const searchMatches = debug.stationSearchMatches as Array<{transitModes: string[]; nameScore: number; modeScore: number}>;
+  searchMatches.forEach(m => { m.modeScore = effectiveMode && m.transitModes.includes(effectiveMode) ? 100 : 0; });
+  searchMatches.sort((a, b) => (b.nameScore + b.modeScore) - (a.nameScore + a.modeScore));
   const compatible = (d: Departure) => {
     const route = routes.find(r => r.id === d.lineId)!;
     const mode = text(route.raw?.TransportMode);
-    if (parsed.mode === "light_rail" && !/metro|rail|tram/i.test(mode)) return false;
-    if (parsed.mode === "bus" && !/bus/i.test(mode)) return false;
+    if (effectiveMode === "light_rail" && !/metro|rail|tram/i.test(mode)) return false;
+    if (effectiveMode === "bus" && !/bus/i.test(mode)) return false;
     if (parsed.route && ![route.id, text(route.raw?.PublicCode)].some(r => norm(r.replace(/^(?:Rapid|Express)\s+/i, "")) === norm(parsed.route!) || norm(r) === norm(parsed.route!))) return false;
     // A terminating train's arrival at this station isn't an onward departure.
     if (d.direction && alias(d.direction) === alias(stops.find(s => s.id === d.stopId)!.name)) return false;
@@ -232,6 +281,10 @@ export async function resolveRiderRequest(input: TransitRequestInput, dependenci
   debug.extractedDirection = parsed.direction ?? service[0].direction;
   const targetIds = new Set(service.map(d => d.stopId));
   debug.resolvedStopIds = [...targetIds];
+  debug.selectedStationId = [...targetIds][0] ?? null;
+  debug.detectedTransitMode = effectiveMode ?? routeMode(routes.find(r => r.id === service[0].lineId)!);
+  debug.extractedMode = debug.detectedTransitMode;
+  (debug.stationSearchMatches as Array<{id: string; selected: boolean}>).forEach(m => { m.selected = targetIds.has(m.id); });
   const liveData = observedOnly ? serviceData : await fetchForStops("live", stops.filter(s => targetIds.has(s.id)));
   const threshold = Math.max(now, parsed.referenced_time ? Date.parse(parsed.referenced_time) : now);
   const valid = (d: Departure) => serviceKey(d) === selectedKey && d.dateTime.getTime() > threshold && d.dateTime.getTime() <= Date.parse(endTime);

@@ -31,6 +31,8 @@ export * from './submissionResponseStatus';
 export * from './transitCandidate';
 export * from './transitDeparture';
 export * from './transitDepartureSource';
+export * from './transitInputClassification';
+export * from './transitInputClassificationIntent';
 export * from './transitMatches';
 export * from './transitReport';
 export * from './transitRequestChoice';

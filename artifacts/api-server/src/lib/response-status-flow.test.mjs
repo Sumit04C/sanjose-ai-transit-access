@@ -34,6 +34,22 @@ try {
   };
   const reporter = await headersFor("reporter", "1357");
   const reviewer = await headersFor("reviewer", "2468");
+  const lookups = ["I missed the 9:55 at Winchester. When’s the next one?", "Is Route 22 delayed?", "When is the next light rail from Diridon?"];
+  const before = await client.query("SELECT count(*) AS count FROM rider_submissions");
+  for (const message of [...lookups, "The bus never showed up.", "The wheelchair ramp was broken.", "There was no shelter at my stop."]) {
+    const response = await fetch(`${base}/transit/classify`, { method: "POST", headers: reporter,
+      body: JSON.stringify({ message, language: "en" }) });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).intent, lookups.includes(message) ? "transit_lookup" : "issue_report");
+  }
+  for (const description of lookups) {
+    const rejected = await fetch(`${base}/submissions`, { method: "POST", headers: reporter,
+      body: JSON.stringify({ description, language: "en", imageName: null }) });
+    assert.equal(rejected.status, 409, "Information requests must never enter report persistence");
+  }
+  const after = await client.query("SELECT count(*) AS count FROM rider_submissions");
+  assert.equal(after.rows[0].count, before.rows[0].count);
+  console.log("PASS: intent endpoint and backend persistence guard; lookup questions created no reports");
   const url = `${base}/submissions/${id}/response-status`;
   const patch = (headers, value) => fetch(url, { method: "PATCH", headers, body: JSON.stringify(value) });
   assert.equal((await patch({ "content-type": "application/json" }, { staffResponseSent: true })).status, 401);

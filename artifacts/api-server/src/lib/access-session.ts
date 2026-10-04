@@ -105,6 +105,7 @@ export const canAccessRoute = (
     return (
       (method === "POST" && path === "/submissions") ||
       (method === "POST" && path === "/transit/request") ||
+      (method === "POST" && path === "/transit/classify") ||
       (method === "GET" && path === "/transit/matches")
     );
   }

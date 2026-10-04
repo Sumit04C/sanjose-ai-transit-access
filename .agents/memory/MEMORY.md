@@ -1,2 +1,3 @@
 - [Transit prototype persistence](transit-prototype-persistence.md) — grounded text AI is authorized; browser-local images remain private and are not sent to AI.
 - [511 rider-facing metadata](511-rider-metadata.md) — stop modes and trip endpoints can mislead; use verified line modes and public headsigns, with strict prediction freshness.
+- [Transit intent routing](transit-intent-routing.md) — information requests are not complaints; classify the main submit path and never persist lookup questions as reports.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseTransitMessage, decodeDepartures, resolveRiderRequest } from "../../dist/test/natural-transit.mjs";
+import { classifyInputIntent, parseTransitMessage, decodeDepartures, resolveRiderRequest } from "../../dist/test/natural-transit.mjs";
 
 const now = Date.parse("2026-10-03T09:50:00-07:00");
 const checked = new Date(now).toISOString();
@@ -26,6 +26,80 @@ const deps = (live = []) => ({
   ] }),
 });
 const question = "I just left my house at 9:50 AM. I am going to miss the light rail departure at 9:55 AM from Winchester Station. When is the next departure?";
+const correctedQuestion = "I missed the 9:55 at Winchester. When’s the next one?";
+
+test("information requests are lookups, while the supplied issue descriptions remain reports", () => {
+  for (const message of ["When is the next train?", correctedQuestion, "Is Route 22 delayed?", "When is the next light rail from Diridon?"]) {
+    assert.equal(classifyInputIntent(message), "transit_lookup", message);
+  }
+  for (const message of ["The bus never showed up.", "The wheelchair ramp was broken.", "There was no shelter at my stop.", "The next bus never showed up.", "The next train had a broken wheelchair ramp."]) {
+    assert.equal(classifyInputIntent(message), "issue_report", message);
+  }
+});
+
+test("the exact correction resolves Winchester and 9:55 AM without a stop ID or mode", async () => {
+  const result = await resolveRiderRequest({ message: correctedQuestion, language: "en", debug: true }, deps());
+  assert.equal(result.status, "resolved");
+  assert.equal(result.debug.detectedIntent, "transit_lookup");
+  assert.equal(result.debug.extractedStation, "Winchester");
+  assert.equal(result.debug.referencedTime, "2026-10-03T16:55:00.000Z");
+  assert.equal(result.debug.selectedStationId, stop.id);
+  assert.equal(result.debug.detectedTransitMode, "light_rail");
+  assert.equal(result.debug.stationSearchPerformed, true);
+  assert.equal(result.debug.stationSearchMatches[0].name, stop.name);
+  assert.equal(result.debug.stationSearchMatches[0].transitModes[0], "light_rail");
+  assert.equal(result.debug.clarificationRequired, false);
+  assert.ok(result.debug.rawApiResultCount > 0);
+  assert.equal(result.debug.liveApiRequestStatus[0].httpStatus, 200);
+  assert.ok(result.departures[0].dateTime.getTime() > Date.parse(result.debug.referencedTime));
+});
+
+test("case-insensitive partial names resolve, and all platforms are queried before direction clarification", async () => {
+  const platforms = [stop, { id: "second-platform", name: "Winchester Station (Platform 2)" }];
+  const queried = [];
+  const provider = deps();
+  provider.reference = async () => ({ ...reference, stops: platforms });
+  provider.payload = async ({ source, stop: platform }) => {
+    queried.push(`${source}:${platform.id}`);
+    const row = visit("2026-10-03T10:12:00-07:00", source, platform.id === stop.id ? "Old Ironsides" : "Mountain View",
+      { DirectionRef: platform.id });
+    row.MonitoringRef = platform.id;
+    row[source === "live" ? "MonitoredVehicleJourney" : "TargetedVehicleJourney"][source === "live" ? "MonitoredCall" : "TargetedCall"].StopPointRef = platform.id;
+    return { httpStatus: 200, retrievedAt: checked, value: [row] };
+  };
+  const result = await resolveRiderRequest({ message: "When is the next light rail from WINCH?", language: "en", debug: true }, provider);
+  assert.equal(result.status, "clarification");
+  assert.equal(result.message, "Which direction are you heading?");
+  assert.ok(queried.includes(`scheduled:${stop.id}`));
+  assert.ok(queried.includes("scheduled:second-platform"));
+  assert.equal(result.debug.stationSearchMatches.length, 2);
+});
+
+test("bare station and numbered bus bays are checked, then the verified primary station mode is inferred", async () => {
+  const busRoute = { id: "verified-bus", name: "Route 27", raw: { TransportMode: "bus", PublicCode: "27" } };
+  const bay = { id: "verified-bus-bay", name: "Winchester Station (Bay 1)" };
+  const queried = [];
+  const provider = deps();
+  provider.reference = async () => ({ ...reference, routes: [route, busRoute], stops: [stop, bay] });
+  provider.payload = async ({ source, stop: target }) => {
+    queried.push(`${source}:${target.id}`);
+    if (source === "live") return { httpStatus: 200, retrievedAt: checked, value: [] };
+    const row = visit("2026-10-03T10:02:00-07:00");
+    if (target.id === bay.id) {
+      row.MonitoringRef = bay.id;
+      row.TargetedVehicleJourney.LineRef = busRoute.id;
+      row.TargetedVehicleJourney.DestinationName = "Downtown";
+      row.TargetedVehicleJourney.TargetedCall.StopPointRef = bay.id;
+    }
+    return { httpStatus: 200, retrievedAt: checked, value: [row] };
+  };
+  const result = await resolveRiderRequest({ message: correctedQuestion, language: "en", debug: true }, provider);
+  assert.equal(result.status, "resolved");
+  assert.equal(result.debug.detectedTransitMode, "light_rail");
+  assert.equal(result.departures[0].route, "Green Line");
+  assert.ok(queried.includes(`scheduled:${bay.id}`));
+  assert.ok(queried.includes(`scheduled:${stop.id}`));
+});
 
 test("all four brief examples extract their intent, mode, station, and relevant time", () => {
   const a = parseTransitMessage(question, now);

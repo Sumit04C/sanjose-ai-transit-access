@@ -10,7 +10,9 @@ const copy = {
   pa: { check: 'ਅਗਲੀ ਰਵਾਨਗੀ ਵੇਖੋ', hint: 'ਉੱਪਰ ਕੁਦਰਤੀ ਤਰੀਕੇ ਨਾਲ ਪੁੱਛੋ: “Winchester ਤੋਂ ਅਗਲੀ ਲਾਈਟ ਰੇਲ ਕਦੋਂ ਹੈ?” ਰੂਟ ਜਾਂ ਸਟਾਪ ID ਦੀ ਲੋੜ ਨਹੀਂ।', error: 'ਆਵਾਜਾਈ ਜਾਣਕਾਰੀ ਨਹੀਂ ਵੇਖੀ ਜਾ ਸਕੀ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।', debug: 'ਡੀਬੱਗ ਮੋਡ: ਸਵਾਲ ਅਤੇ ਸਰੋਤ ਦੇ ਵੇਰਵੇ' },
 };
 
-export default function TransitQuestion({ message, language }: { message: string; language: Language }) {
+export default function TransitQuestion({ message, language, requestTrigger = 0, onPendingChange }: {
+  message: string; language: Language; requestTrigger?: number; onPendingChange?: (pending: boolean) => void;
+}) {
   const t = copy[language];
   const lookup = useResolveTransitRequest();
   const [result, setResult] = useState<TransitRequestResult | null>(null);
@@ -22,12 +24,17 @@ export default function TransitQuestion({ message, language }: { message: string
   }, [message, language]); // A changed question invalidates any previous choice.
   const check = (choice?: string) => {
     const requestGeneration = generation.current;
+    setResult(null);
     lookup.mutate({ data: { message: message.trim(), language, choice, debug: true } }, {
       onSuccess: value => {
         if (generation.current === requestGeneration) setResult(value);
       },
     });
   };
+  useEffect(() => {
+    if (requestTrigger) check();
+  }, [requestTrigger]);
+  useEffect(() => { onPendingChange?.(lookup.isPending); }, [lookup.isPending, onPendingChange]);
   return (
     <section className="mt-4 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--secondary)/.4)] p-4" data-testid="transit-question">
       <p className="text-xs leading-5 text-[hsl(var(--muted-foreground))]">{t.hint}</p>
@@ -55,7 +62,7 @@ export default function TransitQuestion({ message, language }: { message: string
               {new Intl.DateTimeFormat({ en: 'en-US', vi: 'vi-VN', es: 'es-US', pa: 'pa-IN' }[language], { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(d.dateTime))} — {d.route} · {d.direction}
             </li>)}
           </ul>}
-          {result.debug && <details className="mt-4 text-xs" data-testid="transit-debug">
+          {result.debug && <details open className="mt-4 text-xs" data-testid="transit-debug">
             <summary className="focus-ring cursor-pointer font-semibold text-[hsl(var(--muted-foreground))]">{t.debug}</summary>
             <pre className="mt-2 overflow-x-auto rounded-xl bg-[hsl(var(--background))] p-3">{JSON.stringify(result.debug, null, 2)}</pre>
           </details>}

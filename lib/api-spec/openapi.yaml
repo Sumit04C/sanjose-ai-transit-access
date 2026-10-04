@@ -227,6 +227,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RiderSubmission"
+        "409":
+          description: Input is a transit lookup and must not be saved as a report
   /submissions/{id}/response-status:
     patch:
       operationId: updateSubmissionResponseStatus
@@ -295,8 +297,31 @@ paths:
                 $ref: "#/components/schemas/TransitMatches"
         "400":
           description: Invalid search
+  /transit/classify:
+    post:
+      operationId: classifyTransitInput
+      tags: [transit]
+      summary: Classify input before entering the report workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransitRequestInput" }
+      responses:
+        "200":
+          description: Detected input intent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransitInputClassification" }
+        "400":
+          description: Invalid input
 components:
   schemas:
+    TransitInputClassification:
+      type: object
+      properties:
+        intent: { type: string, enum: [transit_lookup, issue_report] }
+      required: [intent]
     SubmissionResponseStatus:
       type: object
       properties:

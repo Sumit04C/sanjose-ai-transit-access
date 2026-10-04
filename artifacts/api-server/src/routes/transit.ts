@@ -1,9 +1,18 @@
 import { Router, type IRouter } from "express";
-import { GetTransitMatchesQueryParams, GetTransitMatchesResponse, ResolveTransitRequestBody, ResolveTransitRequestResponse } from "@workspace/api-zod";
+import { GetTransitMatchesQueryParams, GetTransitMatchesResponse, ResolveTransitRequestBody, ResolveTransitRequestResponse, ClassifyTransitInputBody, ClassifyTransitInputResponse } from "@workspace/api-zod";
 import { matchTransit } from "../lib/transit-provider";
 import { resolveRiderRequest } from "../lib/natural-transit";
+import { classifyInputIntent } from "../lib/transit-intent";
 
 const router: IRouter = Router();
+router.post("/transit/classify", (req, res): void => {
+  const input = ClassifyTransitInputBody.safeParse(req.body);
+  if (!input.success || !input.data.message.trim()) {
+    res.status(400).json({ error: "Enter a question or issue description." });
+    return;
+  }
+  res.json(ClassifyTransitInputResponse.parse({ intent: classifyInputIntent(input.data.message) }));
+});
 router.post("/transit/request", async (req, res): Promise<void> => {
   const input = ResolveTransitRequestBody.safeParse(req.body);
   if (!input.success || !input.data.message.trim()) {

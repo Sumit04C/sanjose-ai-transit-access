@@ -32,6 +32,7 @@ import type {
   RiderSubmission,
   RiderSubmissionInput,
   SubmissionResponseStatus,
+  TransitInputClassification,
   TransitMatches,
   TransitReport,
   TransitRequestInput,
@@ -993,7 +994,7 @@ return customFetch<RiderSubmission>(getCreateSubmissionUrl(),
 
 export const getCreateSubmissionMutationKey = () => ['createSubmission'] as const;
 
-export const getCreateSubmissionMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateSubmissionMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubmission>>, TError,CreateSubmissionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createSubmission>>, TError,CreateSubmissionMutationVariables, TContext> => {
 
@@ -1022,13 +1023,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateSubmissionMutationResult = NonNullable<Awaited<ReturnType<typeof createSubmission>>>
     export type CreateSubmissionMutationBody = BodyType<RiderSubmissionInput>
-    export type CreateSubmissionMutationError = ErrorType<unknown>
+    export type CreateSubmissionMutationError = ErrorType<void>
     export type CreateSubmissionMutationVariables = {data: BodyType<RiderSubmissionInput>}
 
     /**
  * @summary Save a rider submission, grounded response and source snapshots
  */
-export const useCreateSubmission = <TError = ErrorType<unknown>,
+export const useCreateSubmission = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubmission>>, TError,CreateSubmissionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createSubmission>>,
@@ -1299,4 +1300,92 @@ export function useGetTransitMatches<TData = Awaited<ReturnType<typeof getTransi
 
 
 
+
+export const getClassifyTransitInputUrl = () => {
+
+
+
+
+  return `/api/transit/classify`
+}
+
+/**
+ * @summary Classify input before entering the report workflow
+ */
+export const classifyTransitInput = async (transitRequestInput: TransitRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<TransitInputClassification> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TransitInputClassification>(getClassifyTransitInputUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(transitRequestInput)
+  }
+);}
+
+
+
+
+
+export const getClassifyTransitInputMutationKey = () => ['classifyTransitInput'] as const;
+
+export const getClassifyTransitInputMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyTransitInput>>, TError,ClassifyTransitInputMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof classifyTransitInput>>, TError,ClassifyTransitInputMutationVariables, TContext> => {
+
+const mutationKey = getClassifyTransitInputMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof classifyTransitInput>>, ClassifyTransitInputMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  classifyTransitInput(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClassifyTransitInputMutationResult = NonNullable<Awaited<ReturnType<typeof classifyTransitInput>>>
+    export type ClassifyTransitInputMutationBody = BodyType<TransitRequestInput>
+    export type ClassifyTransitInputMutationError = ErrorType<void>
+    export type ClassifyTransitInputMutationVariables = {data: BodyType<TransitRequestInput>}
+
+    /**
+ * @summary Classify input before entering the report workflow
+ */
+export const useClassifyTransitInput = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof classifyTransitInput>>, TError,ClassifyTransitInputMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof classifyTransitInput>>,
+        TError,
+        ClassifyTransitInputMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClassifyTransitInputMutationOptions(options));
+    }
 

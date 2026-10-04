@@ -1,0 +1,58 @@
+The previous natural-language transit update is still not working correctly. Do not redesign the application. Fix these two specific issues only.
+Problem 1: Intent classification
+The input:
+“I missed the 9:55 at Winchester. When’s the next one?”
+is currently being treated as an issue report and saved as a report.
+Add an intent-classification step before the report workflow.
+Classify natural-language input into at least:
+- transit_lookup
+- issue_report
+Examples of transit_lookup:
+- “When is the next train?”
+- “I missed the 9:55 at Winchester. When’s the next one?”
+- “Is Route 22 delayed?”
+- “When is the next light rail from Diridon?”
+Examples of issue_report:
+- “The bus never showed up.”
+- “The wheelchair ramp was broken.”
+- “There was no shelter at my stop.”
+A transit_lookup should NOT be stored or described as a rider complaint/report. It should immediately enter the live transit lookup flow.
+Problem 2: Natural-language station resolution
+The app currently recognizes the word “Winchester” but refuses the lookup because an exact stop ID was not provided.
+Fix the station resolver so common rider language can be mapped to VTA stops/stations automatically.
+For example:
+Winchester
+should be searched against the VTA/511 stop dataset and matched to relevant stops containing Winchester, such as the Winchester station/transit center.
+Do not require the rider to know a stop ID.
+Resolution process:
+1. Extract the station name from the rider's sentence.
+2. Search the available VTA stop/station data using case-insensitive and partial-name matching.
+3. Rank matching stops by name similarity and transit mode.
+4. If the rider says “light rail,” prioritize light-rail stops.
+5. If one station is clearly the best match, automatically use its stop ID.
+6. If multiple directions/platforms exist but the next-departure query can be checked across all of them, query them first instead of immediately asking the rider.
+7. Ask a clarification only if the answer would materially differ depending on direction.
+For:
+“I missed the 9:55 at Winchester. When’s the next one?”
+the system should infer:
+- intent = transit_lookup
+- station = Winchester
+- referenced time = 9:55 AM
+- request = next departure after 9:55 AM
+It should then resolve Winchester using VTA stop data and perform the lookup.
+If direction is required, ask only:
+“Which direction are you heading?”
+Do not ask the user for a stop ID, cross street, or technical API identifier unless automatic station resolution completely fails.
+Debugging
+Temporarily display:
+- detected intent
+- extracted station text
+- station search matches
+- selected stop/station ID
+- detected transit mode
+- whether clarification was required
+- live API request status
+- raw API result count
+Test specifically with:
+“I missed the 9:55 at Winchester. When’s the next one?”
+Do not consider the fix complete if the response still says “no unambiguous stop was supplied” without first searching the VTA stop dataset.

@@ -452,3 +452,24 @@ export const GetTransitMatchesResponse = zod.object({
 })
 
 
+/**
+ * @summary Classify input before entering the report workflow
+ */
+export const classifyTransitInputBodyMessageMax = 1000;
+
+export const classifyTransitInputBodyChoiceMax = 500;
+
+
+
+export const ClassifyTransitInputBody = zod.object({
+  "message": zod.string().min(1).max(classifyTransitInputBodyMessageMax),
+  "language": zod.enum(['vi', 'en', 'es', 'pa']),
+  "choice": zod.string().max(classifyTransitInputBodyChoiceMax).optional(),
+  "debug": zod.boolean().optional()
+})
+
+export const ClassifyTransitInputResponse = zod.object({
+  "intent": zod.enum(['transit_lookup', 'issue_report'])
+})
+
+
