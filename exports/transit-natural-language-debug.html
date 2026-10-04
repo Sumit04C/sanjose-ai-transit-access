@@ -1,0 +1,260 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VTA natural-language departure checks</title><style>body{font:15px/1.65 system-ui,sans-serif;background:#f4f7fa;color:#18324a;margin:0}main{max-width:950px;padding:32px 20px;margin:auto}h1{line-height:1.2}article{background:white;border:1px solid #d8e1e8;border-radius:16px;padding:24px;margin:24px 0}blockquote{margin:14px 0;border-left:3px solid #3575a7;padding:8px 16px;background:#f4f7fa}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eff4f8;padding:16px;border-radius:10px;font-size:12px}small{color:#52677a}.status{font-weight:700;color:#23597d}</style><main><h1>VTA natural-language departure checks</h1><p>The four requested examples, with full debugging output. These checks use actual 511 responses captured on October 3, 2026 (America/Los_Angeles) and replayed after correcting rider-facing headsign handling. Times below are point-in-time test results, not current travel advice. Use the app for a fresh lookup.</p><p>Winchester resolved without an ID or bay selection. Live responses had an invalid 1970 recording timestamp, so the application correctly used the scheduled fallback instead of claiming fresh live data. Diridon had multiple valid bus services and required one clarification.</p><article><h2>Test 1</h2><blockquote>I just left my house at 9:50 AM. I am going to miss the light rail departure at 9:55 AM from Winchester Station. When is the next departure?</blockquote><p class="status">resolved</p><p>Next departure (after 9:55 AM PDT): 8:03 PM PDT — Green Line toward OLD IRONSIDES. Realtime information is unavailable for this result; this is based on the schedule, not live vehicle data. Last checked: 7:44 PM PDT.</p><h3>Debugging mode</h3><pre>{
+  &quot;extractedIntent&quot;: &quot;next_departure&quot;,
+  &quot;extractedMode&quot;: &quot;light_rail&quot;,
+  &quot;extractedStation&quot;: &quot;Winchester Station&quot;,
+  &quot;extractedRoute&quot;: &quot;Green Line&quot;,
+  &quot;extractedDirection&quot;: &quot;OLD IRONSIDES&quot;,
+  &quot;referencedTime&quot;: &quot;2026-10-03T16:55:00.000Z&quot;,
+  &quot;requestedDepartureCount&quot;: 1,
+  &quot;date&quot;: &quot;2026-10-03&quot;,
+  &quot;timeZone&quot;: &quot;America/Los_Angeles&quot;,
+  &quot;resolvedStopIds&quot;: [
+    &quot;65380&quot;
+  ],
+  &quot;clarificationRequired&quot;: false,
+  &quot;apiRequestStatus&quot;: {
+    &quot;reference&quot;: &quot;available&quot;,
+    &quot;scheduled&quot;: [
+      {
+        &quot;stopId&quot;: &quot;65396&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.635Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;65380&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.345Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;65397&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.685Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 7
+      },
+      {
+        &quot;stopId&quot;: &quot;65387&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.674Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 5
+      }
+    ],
+    &quot;live&quot;: [
+      {
+        &quot;stopId&quot;: &quot;65380&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;empty&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:42.155Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 0
+      }
+    ]
+  },
+  &quot;dataKind&quot;: &quot;scheduled&quot;,
+  &quot;retrievalTimestamp&quot;: &quot;2026-10-04T02:44:40.345Z&quot;
+}</pre></article><article><h2>Test 2</h2><blockquote>I just missed the train at Winchester. When is the next one?</blockquote><p class="status">resolved</p><p>Next departure: 8:03 PM PDT — Green Line toward OLD IRONSIDES. Realtime information is unavailable for this result; this is based on the schedule, not live vehicle data. Last checked: 7:44 PM PDT.</p><h3>Debugging mode</h3><pre>{
+  &quot;extractedIntent&quot;: &quot;next_departure&quot;,
+  &quot;extractedMode&quot;: &quot;light_rail&quot;,
+  &quot;extractedStation&quot;: &quot;Winchester&quot;,
+  &quot;extractedRoute&quot;: &quot;Green Line&quot;,
+  &quot;extractedDirection&quot;: &quot;OLD IRONSIDES&quot;,
+  &quot;referencedTime&quot;: null,
+  &quot;requestedDepartureCount&quot;: 1,
+  &quot;date&quot;: &quot;2026-10-03&quot;,
+  &quot;timeZone&quot;: &quot;America/Los_Angeles&quot;,
+  &quot;resolvedStopIds&quot;: [
+    &quot;65380&quot;
+  ],
+  &quot;clarificationRequired&quot;: false,
+  &quot;apiRequestStatus&quot;: {
+    &quot;reference&quot;: &quot;available&quot;,
+    &quot;scheduled&quot;: [
+      {
+        &quot;stopId&quot;: &quot;65397&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.685Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 7
+      },
+      {
+        &quot;stopId&quot;: &quot;65387&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.674Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 5
+      },
+      {
+        &quot;stopId&quot;: &quot;65396&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.635Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;65380&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.345Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      }
+    ],
+    &quot;live&quot;: [
+      {
+        &quot;stopId&quot;: &quot;65380&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;empty&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:42.155Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 0
+      }
+    ]
+  },
+  &quot;dataKind&quot;: &quot;scheduled&quot;,
+  &quot;retrievalTimestamp&quot;: &quot;2026-10-04T02:44:40.345Z&quot;
+}</pre></article><article><h2>Test 3</h2><blockquote>When is the next light rail from Winchester?</blockquote><p class="status">resolved</p><p>Next departure: 8:03 PM PDT — Green Line toward OLD IRONSIDES. Realtime information is unavailable for this result; this is based on the schedule, not live vehicle data. Last checked: 7:44 PM PDT.</p><h3>Debugging mode</h3><pre>{
+  &quot;extractedIntent&quot;: &quot;next_departure&quot;,
+  &quot;extractedMode&quot;: &quot;light_rail&quot;,
+  &quot;extractedStation&quot;: &quot;Winchester&quot;,
+  &quot;extractedRoute&quot;: &quot;Green Line&quot;,
+  &quot;extractedDirection&quot;: &quot;OLD IRONSIDES&quot;,
+  &quot;referencedTime&quot;: null,
+  &quot;requestedDepartureCount&quot;: 1,
+  &quot;date&quot;: &quot;2026-10-03&quot;,
+  &quot;timeZone&quot;: &quot;America/Los_Angeles&quot;,
+  &quot;resolvedStopIds&quot;: [
+    &quot;65380&quot;
+  ],
+  &quot;clarificationRequired&quot;: false,
+  &quot;apiRequestStatus&quot;: {
+    &quot;reference&quot;: &quot;available&quot;,
+    &quot;scheduled&quot;: [
+      {
+        &quot;stopId&quot;: &quot;65387&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.674Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 5
+      },
+      {
+        &quot;stopId&quot;: &quot;65380&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.345Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;65396&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.635Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;65397&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:40.685Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 7
+      }
+    ],
+    &quot;live&quot;: [
+      {
+        &quot;stopId&quot;: &quot;65380&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;empty&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:42.155Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 0
+      }
+    ]
+  },
+  &quot;dataKind&quot;: &quot;scheduled&quot;,
+  &quot;retrievalTimestamp&quot;: &quot;2026-10-04T02:44:40.345Z&quot;
+}</pre></article><article><h2>Test 4</h2><blockquote>My bus at Diridon was supposed to come 10 minutes ago. Is another one coming?</blockquote><p class="status">clarification</p><p>Which direction or service are you traveling on?</p><p>Verified choices:</p><ul><li>68 — toward SJ DIRIDON</li><li>68 — toward GILROY TRANSIT CTR</li><li>Rapid 500 — toward RAPID BERRYESSA BART</li><li>Rapid 500 — toward RAPID SJ DIRIDON</li><li>64A — toward OHLONE-CHYNOWETH STATION</li><li>64A — toward MCKEE &amp; WHITE</li></ul><h3>Debugging mode</h3><pre>{
+  &quot;extractedIntent&quot;: &quot;next_departure&quot;,
+  &quot;extractedMode&quot;: &quot;bus&quot;,
+  &quot;extractedStation&quot;: &quot;Diridon&quot;,
+  &quot;extractedRoute&quot;: null,
+  &quot;extractedDirection&quot;: null,
+  &quot;referencedTime&quot;: &quot;2026-10-04T02:34:42.280Z&quot;,
+  &quot;requestedDepartureCount&quot;: 1,
+  &quot;date&quot;: &quot;2026-10-03&quot;,
+  &quot;timeZone&quot;: &quot;America/Los_Angeles&quot;,
+  &quot;resolvedStopIds&quot;: [
+    &quot;65374&quot;,
+    &quot;65381&quot;,
+    &quot;63413&quot;,
+    &quot;64514&quot;,
+    &quot;63072&quot;,
+    &quot;63139&quot;,
+    &quot;62936&quot;,
+    &quot;63025&quot;
+  ],
+  &quot;clarificationRequired&quot;: true,
+  &quot;apiRequestStatus&quot;: {
+    &quot;reference&quot;: &quot;available&quot;,
+    &quot;scheduled&quot;: [
+      {
+        &quot;stopId&quot;: &quot;64514&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;empty&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:43.472Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 0
+      },
+      {
+        &quot;stopId&quot;: &quot;62936&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;empty&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:43.047Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 0
+      },
+      {
+        &quot;stopId&quot;: &quot;63139&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:43.372Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;63072&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:43.064Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 12
+      },
+      {
+        &quot;stopId&quot;: &quot;63025&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:43.295Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 4
+      },
+      {
+        &quot;stopId&quot;: &quot;65381&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:43.116Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 5
+      },
+      {
+        &quot;stopId&quot;: &quot;65374&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:42.998Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 5
+      },
+      {
+        &quot;stopId&quot;: &quot;63413&quot;,
+        &quot;httpStatus&quot;: 200,
+        &quot;status&quot;: &quot;available&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-10-04T02:44:42.934Z&quot;,
+        &quot;acceptedDepartureRows&quot;: 9
+      }
+    ],
+    &quot;live&quot;: []
+  },
+  &quot;dataKind&quot;: &quot;scheduled&quot;,
+  &quot;retrievalTimestamp&quot;: &quot;2026-10-04T02:44:43.472Z&quot;
+}</pre></article><small>No arrival or departure times were generated by AI. Automated fixture tests separately verify the morning-reference case, live precedence, stale/wrong-stop/cancelled rejection, requested counts, and clarification choices.</small></main></html>

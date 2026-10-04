@@ -227,6 +227,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RiderSubmission"
+  /submissions/{id}/response-status:
+    patch:
+      operationId: updateSubmissionResponseStatus
+      tags: [submissions]
+      summary: Record whether a staff reply was sent (reviewer access only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 100 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmissionResponseStatus"
+      responses:
+        "200":
+          description: Updated submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiderSubmission"
+        "400":
+          description: Invalid status
+        "404":
+          description: Submission not found
+  /transit/request:
+    post:
+      operationId: resolveTransitRequest
+      tags: [submissions]
+      summary: Resolve a rider's question to verified station services and departures
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitRequestInput"
+      responses:
+        "200":
+          description: Departures, a single clarification, or an explicit availability message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransitRequestResult"
+        "400":
+          description: Invalid question
   /transit/matches:
     get:
       operationId: getTransitMatches
@@ -250,6 +297,49 @@ paths:
           description: Invalid search
 components:
   schemas:
+    SubmissionResponseStatus:
+      type: object
+      properties:
+        staffResponseSent: { type: boolean }
+      required: [staffResponseSent]
+    TransitRequestInput:
+      type: object
+      properties:
+        message: { type: string, minLength: 1, maxLength: 1000 }
+        language: { $ref: "#/components/schemas/SubmissionLanguage" }
+        choice: { type: string, maxLength: 500 }
+        debug: { type: boolean }
+      required: [message, language]
+    TransitRequestChoice:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+      required: [id, label]
+    TransitDeparture:
+      type: object
+      properties:
+        dateTime: { type: string, format: date-time }
+        route: { type: string }
+        direction: { type: string }
+        source: { type: string, enum: [live, scheduled] }
+        retrievedAt: { type: string, format: date-time }
+      required: [dateTime, route, direction, source, retrievedAt]
+    TransitRequestResult:
+      type: object
+      properties:
+        status: { type: string, enum: [resolved, clarification, unavailable, no_departures] }
+        message: { type: string }
+        choices:
+          type: array
+          items: { $ref: "#/components/schemas/TransitRequestChoice" }
+        departures:
+          type: array
+          items: { $ref: "#/components/schemas/TransitDeparture" }
+        debug:
+          type: ["object", "null"]
+          additionalProperties: true
+      required: [status, message, choices, departures, debug]
     TransitCandidate:
       type: object
       properties:
@@ -310,6 +400,8 @@ components:
           type: ["string", "null"]
         assistantResponse:
           type: string
+        staffResponseSent:
+          type: boolean
         dataSource:
           $ref: "#/components/schemas/SubmissionDataSource"
         submittedAt:
@@ -344,7 +436,7 @@ components:
         responseKind:
           type: string
           enum: [ai_generated, context_only, legacy_fixed]
-      required: [id, reference, description, language, imageName, assistantResponse, dataSource, submittedAt, issueCategory, route, stop, routeId, stopId, operatorId, routeName, stopName, inputIsSynthetic, inputSource, dataSourcesUsed, sfBay511DataUsed, vtaOpenDataUsed, liveArrivalSnapshot, serviceAlertSnapshot, vtaOpenDataSnapshot, vtaOpenDataDatasetTitle, vtaOpenDataPublisher, vtaOpenDataSourceUrl, vtaOpenDataResourceUrl, sourceRetrievedAt, transitNotes, responseKind]
+      required: [id, reference, description, language, imageName, assistantResponse, staffResponseSent, dataSource, submittedAt, issueCategory, route, stop, routeId, stopId, operatorId, routeName, stopName, inputIsSynthetic, inputSource, dataSourcesUsed, sfBay511DataUsed, vtaOpenDataUsed, liveArrivalSnapshot, serviceAlertSnapshot, vtaOpenDataSnapshot, vtaOpenDataDatasetTitle, vtaOpenDataPublisher, vtaOpenDataSourceUrl, vtaOpenDataResourceUrl, sourceRetrievedAt, transitNotes, responseKind]
     HealthStatus:
       type: object
       properties:

@@ -31,8 +31,11 @@ import type {
   ReportStatusInput,
   RiderSubmission,
   RiderSubmissionInput,
+  SubmissionResponseStatus,
   TransitMatches,
-  TransitReport
+  TransitReport,
+  TransitRequestInput,
+  TransitRequestResult
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1034,6 +1037,183 @@ export const useCreateSubmission = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateSubmissionMutationOptions(options));
+    }
+
+export const getUpdateSubmissionResponseStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/submissions/${id}/response-status`
+}
+
+/**
+ * @summary Record whether a staff reply was sent (reviewer access only)
+ */
+export const updateSubmissionResponseStatus = async (id: string,
+    submissionResponseStatus: SubmissionResponseStatus, options?: Parameters<typeof customFetch>[1]): Promise<RiderSubmission> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RiderSubmission>(getUpdateSubmissionResponseStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(submissionResponseStatus)
+  }
+);}
+
+
+
+
+
+export const getUpdateSubmissionResponseStatusMutationKey = () => ['updateSubmissionResponseStatus'] as const;
+
+export const getUpdateSubmissionResponseStatusMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubmissionResponseStatus>>, TError,UpdateSubmissionResponseStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSubmissionResponseStatus>>, TError,UpdateSubmissionResponseStatusMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSubmissionResponseStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSubmissionResponseStatus>>, UpdateSubmissionResponseStatusMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSubmissionResponseStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSubmissionResponseStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateSubmissionResponseStatus>>>
+    export type UpdateSubmissionResponseStatusMutationBody = BodyType<SubmissionResponseStatus>
+    export type UpdateSubmissionResponseStatusMutationError = ErrorType<void>
+    export type UpdateSubmissionResponseStatusMutationVariables = {id: string;data: BodyType<SubmissionResponseStatus>}
+
+    /**
+ * @summary Record whether a staff reply was sent (reviewer access only)
+ */
+export const useUpdateSubmissionResponseStatus = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubmissionResponseStatus>>, TError,UpdateSubmissionResponseStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSubmissionResponseStatus>>,
+        TError,
+        UpdateSubmissionResponseStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSubmissionResponseStatusMutationOptions(options));
+    }
+
+export const getResolveTransitRequestUrl = () => {
+
+
+
+
+  return `/api/transit/request`
+}
+
+/**
+ * @summary Resolve a rider's question to verified station services and departures
+ */
+export const resolveTransitRequest = async (transitRequestInput: TransitRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<TransitRequestResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TransitRequestResult>(getResolveTransitRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(transitRequestInput)
+  }
+);}
+
+
+
+
+
+export const getResolveTransitRequestMutationKey = () => ['resolveTransitRequest'] as const;
+
+export const getResolveTransitRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveTransitRequest>>, TError,ResolveTransitRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolveTransitRequest>>, TError,ResolveTransitRequestMutationVariables, TContext> => {
+
+const mutationKey = getResolveTransitRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolveTransitRequest>>, ResolveTransitRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  resolveTransitRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolveTransitRequestMutationResult = NonNullable<Awaited<ReturnType<typeof resolveTransitRequest>>>
+    export type ResolveTransitRequestMutationBody = BodyType<TransitRequestInput>
+    export type ResolveTransitRequestMutationError = ErrorType<void>
+    export type ResolveTransitRequestMutationVariables = {data: BodyType<TransitRequestInput>}
+
+    /**
+ * @summary Resolve a rider's question to verified station services and departures
+ */
+export const useResolveTransitRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveTransitRequest>>, TError,ResolveTransitRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resolveTransitRequest>>,
+        TError,
+        ResolveTransitRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getResolveTransitRequestMutationOptions(options));
     }
 
 export const getGetTransitMatchesUrl = (params?: GetTransitMatchesParams,) => {

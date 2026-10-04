@@ -6,7 +6,7 @@ const reports = [
   {
     reference: "VTA-C2E03404", language: "en", inputIsSynthetic: false,
     inputSource: "rider-submitted input", sfBay511DataUsed: true,
-    responseKind: "ai_generated", description: "The bus was crowded.",
+    responseKind: "ai_generated", staffResponseSent: true, description: "The bus was crowded.",
   },
   {
     reference: "VTA-B2420100", language: "vi", inputIsSynthetic: true,
@@ -43,4 +43,10 @@ test("filters combine and synthetic or unclassified submissions are not labeled 
   assert.deepEqual(filterReports(reports, filter("", "rider", "vi")), []);
   assert.deepEqual(filterReports(reports, filter("", "any", "es")), [reports[2]]);
   assert.deepEqual(filterReports(reports, filter("not-a-report", "any", "any")), []);
+});
+
+test("staff response status is separate from an automated response and combines with other filters", () => {
+  assert.deepEqual(filterReports(reports, { ...filter(), responseStatus: "responded" }), [reports[0]]);
+  assert.deepEqual(filterReports(reports, { ...filter(), responseStatus: "not_responded" }), reports.slice(1));
+  assert.deepEqual(filterReports(reports, { ...filter("", "ai", "vi"), responseStatus: "not_responded" }), [reports[1]]);
 });

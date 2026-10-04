@@ -245,6 +245,7 @@ export const ListSubmissionsResponseItem = zod.object({
   "language": zod.enum(['vi', 'en', 'es', 'pa']),
   "imageName": zod.string().nullable(),
   "assistantResponse": zod.string(),
+  "staffResponseSent": zod.boolean(),
   "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
   "submittedAt": zod.coerce.date(),
   "issueCategory": zod.string(),
@@ -310,6 +311,7 @@ export const CreateSubmissionResponse = zod.object({
   "language": zod.enum(['vi', 'en', 'es', 'pa']),
   "imageName": zod.string().nullable(),
   "assistantResponse": zod.string(),
+  "staffResponseSent": zod.boolean(),
   "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
   "submittedAt": zod.coerce.date(),
   "issueCategory": zod.string(),
@@ -335,6 +337,91 @@ export const CreateSubmissionResponse = zod.object({
   "sourceRetrievedAt": zod.coerce.date().nullable(),
   "transitNotes": zod.array(zod.string()),
   "responseKind": zod.enum(['ai_generated', 'context_only', 'legacy_fixed'])
+})
+
+
+/**
+ * @summary Record whether a staff reply was sent (reviewer access only)
+ */
+export const updateSubmissionResponseStatusPathIdMax = 100;
+
+
+
+export const UpdateSubmissionResponseStatusParams = zod.object({
+  "id": zod.coerce.string().min(1).max(updateSubmissionResponseStatusPathIdMax)
+})
+
+export const UpdateSubmissionResponseStatusBody = zod.object({
+  "staffResponseSent": zod.boolean()
+})
+
+export const UpdateSubmissionResponseStatusResponse = zod.object({
+  "id": zod.string(),
+  "reference": zod.string(),
+  "description": zod.string(),
+  "language": zod.enum(['vi', 'en', 'es', 'pa']),
+  "imageName": zod.string().nullable(),
+  "assistantResponse": zod.string(),
+  "staffResponseSent": zod.boolean(),
+  "dataSource": zod.enum(['public dataset', 'real document', 'synthetic data']),
+  "submittedAt": zod.coerce.date(),
+  "issueCategory": zod.string(),
+  "route": zod.string(),
+  "stop": zod.string(),
+  "routeId": zod.string().nullable(),
+  "stopId": zod.string().nullable(),
+  "operatorId": zod.string().nullable(),
+  "routeName": zod.string().nullable(),
+  "stopName": zod.string().nullable(),
+  "inputIsSynthetic": zod.boolean(),
+  "inputSource": zod.string(),
+  "dataSourcesUsed": zod.array(zod.string()),
+  "sfBay511DataUsed": zod.boolean(),
+  "vtaOpenDataUsed": zod.boolean(),
+  "liveArrivalSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "serviceAlertSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "vtaOpenDataSnapshot": zod.record(zod.string(), zod.unknown()).nullable(),
+  "vtaOpenDataDatasetTitle": zod.string().nullable(),
+  "vtaOpenDataPublisher": zod.string().nullable(),
+  "vtaOpenDataSourceUrl": zod.string().nullable(),
+  "vtaOpenDataResourceUrl": zod.string().nullable(),
+  "sourceRetrievedAt": zod.coerce.date().nullable(),
+  "transitNotes": zod.array(zod.string()),
+  "responseKind": zod.enum(['ai_generated', 'context_only', 'legacy_fixed'])
+})
+
+
+/**
+ * @summary Resolve a rider's question to verified station services and departures
+ */
+export const resolveTransitRequestBodyMessageMax = 1000;
+
+export const resolveTransitRequestBodyChoiceMax = 500;
+
+
+
+export const ResolveTransitRequestBody = zod.object({
+  "message": zod.string().min(1).max(resolveTransitRequestBodyMessageMax),
+  "language": zod.enum(['vi', 'en', 'es', 'pa']),
+  "choice": zod.string().max(resolveTransitRequestBodyChoiceMax).optional(),
+  "debug": zod.boolean().optional()
+})
+
+export const ResolveTransitRequestResponse = zod.object({
+  "status": zod.enum(['resolved', 'clarification', 'unavailable', 'no_departures']),
+  "message": zod.string(),
+  "choices": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string()
+})),
+  "departures": zod.array(zod.object({
+  "dateTime": zod.coerce.date(),
+  "route": zod.string(),
+  "direction": zod.string(),
+  "source": zod.enum(['live', 'scheduled']),
+  "retrievedAt": zod.coerce.date()
+})),
+  "debug": zod.record(zod.string(), zod.unknown()).nullable()
 })
 
 

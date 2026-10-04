@@ -35,7 +35,8 @@ type Snapshot<T> = {
   message: string;
 } & T;
 
-type Entity = { id: string; name: string; raw?: Record<string, unknown> };
+export type TransitEntity = { id: string; name: string; raw?: Record<string, unknown> };
+type Entity = TransitEntity;
 type CachedValue = { value: unknown; expiresAt: number; retrievedAt: string };
 
 const API_ROOT = "https://api.511.org/transit";
@@ -908,6 +909,41 @@ export async function matchTransit(route: string, stop: string): Promise<Transit
       message: "511 transit matching is temporarily unavailable; no route or stop was inferred.",
     };
   }
+}
+
+// Reuse the verified, cached 511 catalog; never hardcode station or route IDs.
+export async function getTransitReference() {
+  const operators = await getOperators();
+  const operator = findVtaOperator(operators.entities);
+  if (!operator) throw new Error("No verified VTA operator");
+  const [routes, stops] = await Promise.all([
+    getEntities("routes", operator.id),
+    getEntities("stops", operator.id),
+  ]);
+  return { operatorId: operator.id, routes: routes.entities, stops: stops.entities };
+}
+
+export async function getDeparturePayload(input: {
+  operatorId: string; stop: TransitEntity; source: "live" | "scheduled";
+  startTime: string; endTime: string;
+}) {
+  if (input.source === "scheduled") {
+    const result = await cached(
+      `511:timetable:${input.operatorId}:${input.stop.id}:${input.startTime}`,
+      () => get511WithStatus("stoptimetable", {
+        OperatorRef: input.operatorId, MonitoringRef: input.stop.id,
+        StartTime: input.startTime, EndTime: input.endTime,
+      }),
+    );
+    return { ...result.value, retrievedAt: result.retrievedAt };
+  }
+  const stopCode = verifiedStopCode(input.stop);
+  const params: Record<string, string> = stopCode
+    ? { agency: input.operatorId, stopCode }
+    : { agency: input.operatorId };
+  const result = await live(`511:arrivals:${input.operatorId}:${stopCode ? `stopCode:${stopCode}` : "agency"}`,
+    () => get511WithStatus("StopMonitoring", params));
+  return { ...result.value, retrievedAt: result.retrievedAt };
 }
 
 export async function lookupTransit(input: {

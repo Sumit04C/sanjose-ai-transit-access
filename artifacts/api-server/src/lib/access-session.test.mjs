@@ -26,8 +26,8 @@ test("signed sessions retain their own least-privilege role and expire", () => {
   assert.equal(getAccessSessionRole(reviewerCookie, { ...config, reviewerPasscode: "9201" }), null);
   assert.equal(getAccessSessionRole(reviewerCookie, { ...config, reviewerPasscode: null }), null);
   assert.equal(getAccessSessionRole(reviewerCookie, config, expiresAt), null);
-  assert.equal(reporterCookie.includes(config.reporterPasscode), false);
-  assert.equal(reviewerCookie.includes(config.reviewerPasscode), false);
+  assert.match(reporterCookie, /^\d+\.reporter\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/);
+  assert.match(reviewerCookie, /^\d+\.reviewer\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/);
   assert.equal(getAccessSessionRole(`${expiresAt}.reviewer.${reporterCookie.split(".").at(-1)}`, config), null);
 });
 
@@ -42,9 +42,13 @@ test("pre-role signed sessions remain reporter-only during the rollout", () => {
 test("API permissions separate report submission from saved-report review", () => {
   assert.equal(canAccessRoute("reporter", "POST", "/submissions"), true);
   assert.equal(canAccessRoute("reporter", "GET", "/transit/matches"), true);
+  assert.equal(canAccessRoute("reporter", "POST", "/transit/request"), true);
+  assert.equal(canAccessRoute("reporter", "PATCH", "/submissions/example/response-status"), false);
   assert.equal(canAccessRoute("reporter", "GET", "/submissions"), false);
   assert.equal(canAccessRoute("reporter", "GET", "/reports"), false);
   assert.equal(canAccessRoute("reviewer", "GET", "/submissions"), true);
+  assert.equal(canAccessRoute("reviewer", "PATCH", "/submissions/example/response-status"), true);
+  assert.equal(canAccessRoute("reviewer", "POST", "/transit/request"), false);
   assert.equal(canAccessRoute("reviewer", "POST", "/submissions"), false);
   assert.equal(canAccessRoute("reviewer", "GET", "/transit/matches"), false);
   assert.equal(canAccessRoute("reviewer", "GET", "/reports"), false);

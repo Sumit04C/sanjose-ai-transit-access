@@ -104,10 +104,14 @@ export const canAccessRoute = (
   if (role === "reporter") {
     return (
       (method === "POST" && path === "/submissions") ||
+      (method === "POST" && path === "/transit/request") ||
       (method === "GET" && path === "/transit/matches")
     );
   }
-  return method === "GET" && path === "/submissions";
+  return (
+    (method === "GET" && path === "/submissions") ||
+    (method === "PATCH" && /^\/submissions\/[^/]+\/response-status$/.test(path))
+  );
 };
 
 export const requireAppAccess: RequestHandler = (req, res, next) => {

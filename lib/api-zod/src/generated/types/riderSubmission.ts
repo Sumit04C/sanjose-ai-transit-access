@@ -18,6 +18,7 @@ export interface RiderSubmission {
   /** @nullable */
   imageName: string | null;
   assistantResponse: string;
+  staffResponseSent: boolean;
   dataSource: SubmissionDataSource;
   submittedAt: Date;
   issueCategory: string;

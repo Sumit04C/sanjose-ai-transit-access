@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { AlertCircle, Clock3, ImagePlus, Inbox, RefreshCw } from 'lucide-react';
-import { useListSubmissions } from '@workspace/api-client-react';
+import { getListSubmissionsQueryKey, useListSubmissions } from '@workspace/api-client-react';
 import type { RiderSubmission } from '@workspace/api-client-react';
 import type { Language } from '@/App';
 import TransitDetails from '@/components/TransitDetails';
-import { filterReports, type ReportLanguageFilter, type ReportSourceFilter } from '@/lib/record-filters';
+import StaffResponseStatus from '@/components/StaffResponseStatus';
+import { filterReports, type ReportLanguageFilter, type ReportSourceFilter, type ReportResponseFilter } from '@/lib/record-filters';
 
 const content = {
   vi: {
@@ -27,6 +28,7 @@ const content = {
     sourceAi: 'AI tạo phản hồi',
     filterLanguage: 'Ngôn ngữ gửi',
     languageAny: 'Tất cả ngôn ngữ',
+    filterResponse: 'Phản hồi của nhân viên', responseAny: 'Tất cả trạng thái', responded: 'Đã phản hồi', notResponded: 'Chưa phản hồi',
     resultCount: '{shown} / {total} báo cáo',
     noMatches: 'Không có báo cáo phù hợp với các bộ lọc này.',
     filterHelp: 'Hãy thử thay đổi hoặc xóa bộ lọc.',
@@ -61,6 +63,7 @@ const content = {
     sourceAi: 'AI-generated response',
     filterLanguage: 'Submission language',
     languageAny: 'Any language',
+    filterResponse: 'Staff response', responseAny: 'Any status', responded: 'Responded', notResponded: 'Not responded',
     resultCount: '{shown} of {total} reports',
     noMatches: 'No reports match these filters.',
     filterHelp: 'Try changing or clearing the filters.',
@@ -95,6 +98,7 @@ const content = {
     sourceAi: 'Respuesta generada por IA',
     filterLanguage: 'Idioma del envío',
     languageAny: 'Cualquier idioma',
+    filterResponse: 'Respuesta del personal', responseAny: 'Cualquier estado', responded: 'Respondido', notResponded: 'Sin respuesta',
     resultCount: '{shown} de {total} reportes',
     noMatches: 'Ningún reporte coincide con estos filtros.',
     filterHelp: 'Pruebe cambiar o borrar los filtros.',
@@ -129,6 +133,7 @@ const content = {
     sourceAi: 'AI ਵੱਲੋਂ ਬਣਾਇਆ ਜਵਾਬ',
     filterLanguage: 'ਭੇਜਣ ਦੀ ਭਾਸ਼ਾ',
     languageAny: 'ਕੋਈ ਵੀ ਭਾਸ਼ਾ',
+    filterResponse: 'ਸਟਾਫ਼ ਦਾ ਜਵਾਬ', responseAny: 'ਕੋਈ ਵੀ ਸਥਿਤੀ', responded: 'ਜਵਾਬ ਦਿੱਤਾ', notResponded: 'ਜਵਾਬ ਨਹੀਂ ਦਿੱਤਾ',
     resultCount: '{shown} ਵਿੱਚੋਂ {total} ਰਿਪੋਰਟਾਂ',
     noMatches: 'ਇਨ੍ਹਾਂ ਫ਼ਿਲਟਰਾਂ ਨਾਲ ਕੋਈ ਰਿਪੋਰਟ ਨਹੀਂ ਮਿਲੀ।',
     filterHelp: 'ਫ਼ਿਲਟਰ ਬਦਲੋ ਜਾਂ ਹਟਾਓ।',
@@ -194,6 +199,7 @@ function SubmissionCard({ submission, language }: { submission: RiderSubmission;
         <p className="mt-2 whitespace-pre-wrap text-sm leading-6" data-testid={`text-response-${submission.id}`}>{submission.assistantResponse}</p>
         <p className="mt-2 text-xs leading-5 text-[hsl(var(--muted-foreground))]">{responseDisclaimer}</p>
       </div>
+      <StaffResponseStatus submission={submission} language={language} />
       <TransitDetails submission={submission} language={language} />
     </article>
   );
@@ -201,14 +207,15 @@ function SubmissionCard({ submission, language }: { submission: RiderSubmission;
 
 export default function RecordsPage({ language }: { language: Language }) {
   const t = content[language];
-  const { data, isLoading, isError, refetch, isFetching } = useListSubmissions();
+  const { data, isLoading, isError, refetch, isFetching } = useListSubmissions({ query: { queryKey: getListSubmissionsQueryKey(), refetchInterval: 30_000 } });
   const [referenceFilter, setReferenceFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState<ReportSourceFilter>('any');
   const [languageFilter, setLanguageFilter] = useState<ReportLanguageFilter>('any');
-  const filters = { reference: referenceFilter, source: sourceFilter, language: languageFilter };
+  const [responseFilter, setResponseFilter] = useState<ReportResponseFilter>('any');
+  const filters = { reference: referenceFilter, source: sourceFilter, language: languageFilter, responseStatus: responseFilter };
   const matchingReports = filterReports(data ?? [], filters);
   const filtersActive =
-    referenceFilter.trim().length > 0 || sourceFilter !== 'any' || languageFilter !== 'any';
+    referenceFilter.trim().length > 0 || sourceFilter !== 'any' || languageFilter !== 'any' || responseFilter !== 'any';
 
   return (
     <div className="mx-auto max-w-2xl" data-testid="screen-records">
@@ -233,7 +240,7 @@ export default function RecordsPage({ language }: { language: Language }) {
         <div className="space-y-5">
           <section
             className="grid gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 sm:grid-cols-2 sm:p-5"
-            aria-label={`${t.filterReference}, ${t.filterSource}, ${t.filterLanguage}`}
+            aria-label={`${t.filterReference}, ${t.filterSource}, ${t.filterLanguage}, ${t.filterResponse}`}
             data-testid="filters-records"
           >
             <label className="block text-xs font-bold text-[hsl(var(--muted-foreground))] sm:col-span-2">
@@ -276,6 +283,16 @@ export default function RecordsPage({ language }: { language: Language }) {
                 ))}
               </select>
             </label>
+            <label className="block text-xs font-bold text-[hsl(var(--muted-foreground))] sm:col-span-2">
+              {t.filterResponse}
+              <select value={responseFilter} onChange={event => setResponseFilter(event.target.value as ReportResponseFilter)}
+                className="focus-ring mt-2 min-h-11 w-full rounded-xl border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 text-sm font-medium text-[hsl(var(--foreground))]"
+                data-testid="select-filter-response">
+                <option value="any">{t.responseAny}</option>
+                <option value="responded">{t.responded}</option>
+                <option value="not_responded">{t.notResponded}</option>
+              </select>
+            </label>
             <div className="flex items-center justify-between gap-3 text-xs text-[hsl(var(--muted-foreground))] sm:col-span-2">
               <p role="status" aria-live="polite" data-testid="text-filter-count">
                 {t.resultCount.replace('{shown}', String(matchingReports.length)).replace('{total}', String(data.length))}
@@ -287,6 +304,7 @@ export default function RecordsPage({ language }: { language: Language }) {
                     setReferenceFilter('');
                     setSourceFilter('any');
                     setLanguageFilter('any');
+                    setResponseFilter('any');
                   }}
                   className="focus-ring min-h-10 rounded-lg px-2 font-bold text-[hsl(var(--primary))] underline underline-offset-2"
                   data-testid="button-clear-filters"

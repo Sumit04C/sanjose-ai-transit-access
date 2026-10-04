@@ -1,9 +1,12 @@
 import { Router, type IRouter } from "express";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import {
   CreateSubmissionBody,
   CreateSubmissionResponse,
   ListSubmissionsResponse,
+  UpdateSubmissionResponseStatusParams,
+  UpdateSubmissionResponseStatusBody,
+  UpdateSubmissionResponseStatusResponse,
 } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { submissionsTable, type Submission, type submissionLanguages } from "@workspace/db/schema";
@@ -29,6 +32,28 @@ router.get("/submissions", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.error({ err: error }, "Failed to list rider submissions");
     res.status(500).json({ error: "Unable to load submissions" });
+  }
+});
+
+router.patch("/submissions/:id/response-status", async (req, res): Promise<void> => {
+  const params = UpdateSubmissionResponseStatusParams.safeParse(req.params);
+  const body = UpdateSubmissionResponseStatusBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Invalid staff response status" });
+    return;
+  }
+  try {
+    const [saved] = await db.update(submissionsTable)
+      .set({ staffResponseSent: body.data.staffResponseSent })
+      .where(eq(submissionsTable.id, params.data.id)).returning();
+    if (!saved) {
+      res.status(404).json({ error: "Report not found" });
+      return;
+    }
+    res.json(UpdateSubmissionResponseStatusResponse.parse(toSubmission(saved)));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to update staff response status");
+    res.status(500).json({ error: "Unable to update response status" });
   }
 });
 

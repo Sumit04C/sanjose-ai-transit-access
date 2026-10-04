@@ -1,0 +1,63 @@
+Improve the existing VTA prototype so users can ask simple, natural-language transit questions without knowing route IDs, stop IDs, bay numbers, or API terminology.
+Do not redesign the existing application. Keep the current API integration, reporting features, database, multilingual support, and safety rules.
+Add a natural-language transit request parser before the live VTA lookup.
+For example, a user may write:
+“I just left my house at 9:50 AM. I am going to miss the light rail departure at 9:55 AM from Winchester Station. When is the next departure?”
+The application should automatically extract:
+- intent: next departure
+- transit mode: light rail
+- station: Winchester Station
+- referenced departure time: 9:55 AM
+- requested result: the next valid departure after 9:55 AM
+The user should NOT be required to provide a stop ID, station code, route ID, or bay number.
+Processing flow
+1. Parse the user's natural-language message into structured fields.
+2. Search the VTA/511 data for the station name supplied by the user.
+3. Resolve the station name to the correct API stop/station identifier.
+4. Determine which routes or light rail services operate from that station.
+5. Use the referenced time and current date to request departures after that time.
+6. If there is only one clear matching service/direction, perform the live lookup automatically.
+7. If multiple valid directions or services exist and the system cannot confidently determine which one the rider wants, ask ONE short clarification question such as:
+   “Which direction are you traveling?”
+8. Do not ask users for technical information such as stop IDs unless natural-language resolution completely fails.
+9. Never invent arrival or departure times. Times shown to the user must come from the VTA/511 data.
+10. Clearly distinguish scheduled information from live/realtime information.
+11. If realtime information is unavailable but scheduled information exists, explicitly tell the user that the result is based on the schedule rather than live vehicle data.
+12. Include the data retrieval timestamp when live information is used.
+Expected response style
+Keep the response simple for a normal rider. Do not expose API terminology unless debugging mode is enabled.
+A successful response should look approximately like:
+You’ll miss the 9:55 AM departure from Winchester Station. The next departure is at 10:__ AM toward ____. Live VTA data was last checked at ____.
+If more information is needed:
+I found more than one possible service from Winchester Station. Which direction are you traveling?
+Structured extraction
+Internally convert the rider's message into a structure similar to:
+intent
+mode
+station_name
+route
+direction
+referenced_time
+requested_departure_count
+Missing fields should not automatically cause the lookup to fail. First try to infer them from VTA station and route data. Ask the user only for information that is genuinely necessary to distinguish between multiple possibilities.
+Testing
+Test these inputs:
+Test 1:
+“I just left my house at 9:50 AM. I am going to miss the light rail departure at 9:55 AM from Winchester Station. When is the next departure?”
+Test 2:
+“I just missed the train at Winchester. When is the next one?”
+Test 3:
+“When is the next light rail from Winchester?”
+Test 4:
+“My bus at Diridon was supposed to come 10 minutes ago. Is another one coming?”
+For each test, show in debugging mode:
+- extracted intent
+- extracted station
+- extracted route if available
+- extracted direction if available
+- resolved VTA stop/station ID
+- whether clarification was required
+- API request status
+- live versus scheduled data
+- data retrieval timestamp
+Before editing the code, inspect the existing transit lookup flow and identify where exact stop IDs are currently required. Make the smallest changes needed to add this natural-language resolution step.

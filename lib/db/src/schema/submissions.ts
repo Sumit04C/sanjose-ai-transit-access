@@ -14,6 +14,7 @@ export const submissionsTable = pgTable("rider_submissions", {
   language: text("language").notNull(),
   imageName: text("image_name"),
   assistantResponse: text("assistant_response").notNull(),
+  staffResponseSent: boolean("staff_response_sent").notNull().default(false),
   dataSource: submissionDataSourceEnum("data_source").notNull().default("real document"),
   issueCategory: text("issue_category").notNull().default("other"),
   route: text("route").notNull().default(""),
@@ -45,6 +46,7 @@ export const insertSubmissionSchema = createInsertSchema(submissionsTable).omit(
   id: true,
   reference: true,
   assistantResponse: true,
+  staffResponseSent: true,
   submittedAt: true,
 });
 

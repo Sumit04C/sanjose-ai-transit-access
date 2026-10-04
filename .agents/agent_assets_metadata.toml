@@ -28,3 +28,17 @@ mtime_ms = 1790977363238
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:da2baa1f-2851-4e12-a7e9-36a0f42deb78/7edadefe-be68-459d-83ed-fb8889d3b6a9/6eacd6df-1cef-4666-96c8-ab036ba9dab6"
 storage_version_token = "1790977366849565"
 content_type = "image/png"
+
+[[outputs]]
+id = "JIJ8XdLbMNdEAxxRv9KOy"
+uri = "file://exports/transit-natural-language-debug.html"
+type = "html"
+title = "Four-example transit debug report"
+description = "All four requested inputs, extraction fields, verified station IDs, API status, clarification results, and retrieval timestamps from captured 511 responses."
+logical_id = "b50c37ef-200c-46d9-8911-ce72b6efaab0"
+content_hash = "sha256:2527d9193596b38a32415bb3c49655037e217b1e3f273334d651e3bcaa3ff90c"
+size = 13081
+mtime_ms = 1791082186957
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:da2baa1f-2851-4e12-a7e9-36a0f42deb78/b50c37ef-200c-46d9-8911-ce72b6efaab0/86959549-6184-4016-8b07-0d2e337bbb5d"
+storage_version_token = "1791082355257846"
+content_type = "text/html"

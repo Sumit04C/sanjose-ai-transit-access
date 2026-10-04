@@ -5,6 +5,77 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface SubmissionResponseStatus {
+  staffResponseSent: boolean;
+}
+
+export type SubmissionLanguage = typeof SubmissionLanguage[keyof typeof SubmissionLanguage];
+
+
+export const SubmissionLanguage = {
+  vi: 'vi',
+  en: 'en',
+  es: 'es',
+  pa: 'pa',
+} as const;
+
+export interface TransitRequestInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  message: string;
+  language: SubmissionLanguage;
+  /** @maxLength 500 */
+  choice?: string;
+  debug?: boolean;
+}
+
+export interface TransitRequestChoice {
+  id: string;
+  label: string;
+}
+
+export type TransitDepartureSource = typeof TransitDepartureSource[keyof typeof TransitDepartureSource];
+
+
+export const TransitDepartureSource = {
+  live: 'live',
+  scheduled: 'scheduled',
+} as const;
+
+export interface TransitDeparture {
+  dateTime: string;
+  route: string;
+  direction: string;
+  source: TransitDepartureSource;
+  retrievedAt: string;
+}
+
+export type TransitRequestResultStatus = typeof TransitRequestResultStatus[keyof typeof TransitRequestResultStatus];
+
+
+export const TransitRequestResultStatus = {
+  resolved: 'resolved',
+  clarification: 'clarification',
+  unavailable: 'unavailable',
+  no_departures: 'no_departures',
+} as const;
+
+/**
+ * @nullable
+ */
+export type TransitRequestResultDebug = { [key: string]: unknown } | null;
+
+export interface TransitRequestResult {
+  status: TransitRequestResultStatus;
+  message: string;
+  choices: TransitRequestChoice[];
+  departures: TransitDeparture[];
+  /** @nullable */
+  debug: TransitRequestResultDebug;
+}
+
 export interface TransitCandidate {
   id: string;
   name: string;
@@ -20,16 +91,6 @@ export interface TransitMatches {
  * @nullable
  */
 export type TransitSnapshot = { [key: string]: unknown } | null;
-
-export type SubmissionLanguage = typeof SubmissionLanguage[keyof typeof SubmissionLanguage];
-
-
-export const SubmissionLanguage = {
-  vi: 'vi',
-  en: 'en',
-  es: 'es',
-  pa: 'pa',
-} as const;
 
 export type SubmissionDataSource = typeof SubmissionDataSource[keyof typeof SubmissionDataSource];
 
@@ -91,6 +152,7 @@ export interface RiderSubmission {
   /** @nullable */
   imageName: string | null;
   assistantResponse: string;
+  staffResponseSent: boolean;
   dataSource: SubmissionDataSource;
   submittedAt: string;
   issueCategory: string;

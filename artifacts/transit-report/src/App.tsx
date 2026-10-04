@@ -5,6 +5,7 @@ import { getGetAccessStatusQueryKey, getGetTransitMatchesQueryKey, getListSubmis
 import type { RiderSubmission } from '@workspace/api-client-react';
 import NotFound from '@/pages/not-found';
 import RecordsPage from '@/pages/records';
+import TransitQuestion from '@/components/TransitQuestion';
 import TransitDetails from '@/components/TransitDetails';
 import {
   AlertCircle,
@@ -866,6 +867,7 @@ function ReportForm({
             “{voiceTranscript}”
           </div>
         )}
+        <TransitQuestion message={description} language={language} />
         {voiceMessage && <p className="mt-3 text-sm leading-6 text-[hsl(var(--destructive))]" role="alert" data-testid="status-voice-message">{voiceMessage}</p>}
       </section>
 

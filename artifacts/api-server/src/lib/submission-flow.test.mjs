@@ -13,6 +13,7 @@ const server = spawn(process.execPath, ["dist/index.mjs"], {
   env: {
     ...process.env, PORT: String(port), NODE_ENV: "production",
     TRANSIT_REPORT_PASSCODE: "1357", SESSION_SECRET: "isolated-transit-test-only",
+    TRANSIT_REPORT_REVIEW_PASSCODE: "2468",
   },
   stdio: "ignore",
 });
@@ -38,6 +39,12 @@ try {
   assert.equal(unlock.status, 200);
   const cookie = unlock.headers.get("set-cookie").split(";")[0];
   const headers = { cookie, "content-type": "application/json" };
+  const reviewerUnlock = await fetch(`${base}/access/unlock`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ passcode: "2468", role: "reviewer" }),
+  });
+  assert.equal(reviewerUnlock.status, 200);
+  const reviewerHeaders = { cookie: reviewerUnlock.headers.get("set-cookie").split(";")[0], "content-type": "application/json" };
   const match = await fetch(`${base}/transit/matches?route=60&stop=Santa%20Clara%20Transit%20Center%20%28Bay%201%29`, { headers });
   assert.equal(match.status, 200);
   const matches = await match.json();
@@ -86,8 +93,19 @@ try {
   assert.equal(second.imageName, `${marker}.png`);
   assert.equal(Object.hasOwn(second, "imageData"), false);
 
-  const history = await (await fetch(`${base}/submissions`, { headers })).json();
+  const history = await (await fetch(`${base}/submissions`, { headers: reviewerHeaders })).json();
   assert.ok(history.findIndex((row) => row.id === second.id) < history.findIndex((row) => row.id === first.id));
+  assert.equal(first.staffResponseSent, false, "An automated answer is not a staff reply");
+  const statusUrl = `${base}/submissions/${first.id}/response-status`;
+  assert.equal((await fetch(statusUrl, { method: "PATCH", headers, body: JSON.stringify({ staffResponseSent: true }) })).status, 403);
+  const updated = await fetch(statusUrl, { method: "PATCH", headers: reviewerHeaders, body: JSON.stringify({ staffResponseSent: true }) });
+  assert.equal(updated.status, 200);
+  assert.equal((await updated.json()).staffResponseSent, true);
+  const reloaded = await (await fetch(`${base}/submissions`, { headers: reviewerHeaders })).json();
+  assert.equal(reloaded.find(row => row.id === first.id).staffResponseSent, true, "Staff status survives a fresh request");
+  const undone = await fetch(statusUrl, { method: "PATCH", headers: reviewerHeaders, body: JSON.stringify({ staffResponseSent: false }) });
+  assert.equal(undone.status, 200);
+  assert.equal((await undone.json()).staffResponseSent, false);
   const saved = history.find((row) => row.id === first.id);
   assert.deepEqual(saved.liveArrivalSnapshot, first.liveArrivalSnapshot);
   assert.deepEqual(saved.serviceAlertSnapshot, first.serviceAlertSnapshot);

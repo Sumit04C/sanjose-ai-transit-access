@@ -1,8 +1,18 @@
 import { Router, type IRouter } from "express";
-import { GetTransitMatchesQueryParams, GetTransitMatchesResponse } from "@workspace/api-zod";
+import { GetTransitMatchesQueryParams, GetTransitMatchesResponse, ResolveTransitRequestBody, ResolveTransitRequestResponse } from "@workspace/api-zod";
 import { matchTransit } from "../lib/transit-provider";
+import { resolveRiderRequest } from "../lib/natural-transit";
 
 const router: IRouter = Router();
+router.post("/transit/request", async (req, res): Promise<void> => {
+  const input = ResolveTransitRequestBody.safeParse(req.body);
+  if (!input.success || !input.data.message.trim()) {
+    res.status(400).json({ error: "Enter a transit question." });
+    return;
+  }
+  const result = await resolveRiderRequest(input.data);
+  res.json(ResolveTransitRequestResponse.parse(result));
+});
 router.get("/transit/matches", async (req, res): Promise<void> => {
   const query = GetTransitMatchesQueryParams.safeParse(req.query);
   if (!query.success) {
